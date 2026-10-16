@@ -1,0 +1,556 @@
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  previewFeatures     = ["partialIndexes"]
+  importFileExtension = "js"
+  moduleFormat        = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model activity_items {
+  id                                   String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                              String         @db.Uuid
+  kind                                 String
+  conversation_id                      String?        @db.Uuid
+  message_id                           String?        @db.Uuid
+  actor_id                             String?        @db.Uuid
+  emoji                                String?
+  reminder_id                          String?        @db.Uuid
+  read_at                              DateTime?      @db.Timestamptz(6)
+  cleared_at                           DateTime?      @db.Timestamptz(6)
+  created_at                           DateTime       @default(now()) @db.Timestamptz(6)
+  users_activity_items_actor_idTousers users?         @relation("activity_items_actor_idTousers", fields: [actor_id], references: [id], onUpdate: NoAction)
+  conversations                        conversations? @relation(fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  messages                             messages?      @relation(fields: [message_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_activity_items_user_idTousers  users          @relation("activity_items_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, kind, message_id], map: "activity_items_once_per_message", where: raw("(kind = ANY (ARRAY['mention'::text, 'thread_reply'::text, 'dm'::text]))"))
+  @@unique([user_id, message_id, actor_id, emoji], map: "activity_items_once_per_reaction", where: raw("(kind = 'reaction'::text)"))
+  @@index([actor_id], map: "activity_items_actor_id")
+  @@index([conversation_id], map: "activity_items_conversation_id")
+  @@index([message_id], map: "activity_items_message_id")
+  @@index([user_id, created_at(sort: Desc)], map: "activity_items_user_created")
+  @@index([user_id], map: "activity_items_user_unread", where: raw("((read_at IS NULL) AND (cleared_at IS NULL))"))
+}
+
+model auth_handoffs {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id     String    @db.Uuid
+  code_hash   Bytes     @unique
+  expires_at  DateTime  @db.Timestamptz(6)
+  consumed_at DateTime? @db.Timestamptz(6)
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+  users       users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([expires_at], map: "auth_handoffs_expires_at")
+  @@index([user_id], map: "auth_handoffs_user_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model bookmarks {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conversation_id String        @db.Uuid
+  title           String
+  url             String
+  emoji           String        @default("")
+  rank            String
+  created_by      String        @db.Uuid
+  created_at      DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime      @default(now()) @db.Timestamptz(6)
+  conversations   conversations @relation(fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users           users         @relation(fields: [created_by], references: [id], onUpdate: NoAction)
+
+  @@index([conversation_id, rank], map: "bookmarks_conversation_rank")
+  @@index([created_by], map: "bookmarks_created_by")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model conversation_members {
+  conversation_id    String            @db.Uuid
+  user_id            String            @db.Uuid
+  is_manager         Boolean           @default(false)
+  last_read_seq      BigInt            @default(0)
+  notify_level       String            @default("default")
+  follow_all_threads Boolean           @default(false)
+  section_id         String?           @db.Uuid
+  starred            Boolean           @default(false)
+  is_open            Boolean           @default(true)
+  joined_at          DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime          @default(now()) @db.Timestamptz(6)
+  conversations      conversations     @relation(fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sidebar_sections   sidebar_sections? @relation(fields: [section_id], references: [id], onUpdate: NoAction)
+  users              users             @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([conversation_id, user_id])
+  @@index([section_id], map: "conversation_members_section_id")
+  @@index([user_id], map: "conversation_members_user_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model conversations {
+  id                                      String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  kind                                    String
+  name                                    String?                @unique(map: "conversations_channel_name", where: raw("(kind = ANY (ARRAY['public'::text, 'private'::text]))"))
+  dm_key                                  String?                @unique
+  topic                                   String                 @default("")
+  topic_set_by                            String?                @db.Uuid
+  topic_set_at                            DateTime?              @db.Timestamptz(6)
+  purpose                                 String                 @default("")
+  is_general                              Boolean                @unique(map: "conversations_one_general", where: raw("is_general")) @default(false)
+  is_default                              Boolean                @default(false)
+  posting_policy                          String                 @default("everyone")
+  allow_channel_mentions                  Boolean                @default(true)
+  created_by                              String                 @db.Uuid
+  archived_at                             DateTime?              @db.Timestamptz(6)
+  archived_by                             String?                @db.Uuid
+  created_at                              DateTime               @default(now()) @db.Timestamptz(6)
+  updated_at                              DateTime               @default(now()) @db.Timestamptz(6)
+  activity_items                          activity_items[]
+  bookmarks                               bookmarks[]
+  conversation_members                    conversation_members[]
+  users_conversations_archived_byTousers  users?                 @relation("conversations_archived_byTousers", fields: [archived_by], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  users_conversations_created_byTousers   users                  @relation("conversations_created_byTousers", fields: [created_by], references: [id], onUpdate: NoAction)
+  users_conversations_topic_set_byTousers users?                 @relation("conversations_topic_set_byTousers", fields: [topic_set_by], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  drafts                                  drafts[]
+  messages                                messages[]
+  pins                                    pins[]
+  scheduled_messages                      scheduled_messages[]
+
+  @@index([archived_by], map: "conversations_archived_by")
+  @@index([created_by], map: "conversations_created_by")
+  @@index([kind], map: "conversations_kind")
+  @@index([name(ops: raw("gin_trgm_ops"))], map: "conversations_name_trgm", type: Gin, where: raw("(kind = ANY (ARRAY['public'::text, 'private'::text]))"))
+  @@index([topic_set_by], map: "conversations_topic_set_by")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model custom_emoji {
+  id                 String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name               String         @unique
+  image_key          String?
+  alias_of_id        String?        @db.Uuid
+  created_by         String         @db.Uuid
+  created_at         DateTime       @default(now()) @db.Timestamptz(6)
+  custom_emoji       custom_emoji?  @relation("custom_emojiTocustom_emoji", fields: [alias_of_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  other_custom_emoji custom_emoji[] @relation("custom_emojiTocustom_emoji")
+  users              users          @relation(fields: [created_by], references: [id], onUpdate: NoAction)
+
+  @@index([alias_of_id], map: "custom_emoji_alias_of_id")
+  @@index([created_by], map: "custom_emoji_created_by")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model drafts {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id         String        @db.Uuid
+  conversation_id String        @db.Uuid
+  parent_id       String?       @db.Uuid
+  text            String
+  created_at      DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime      @default(now()) @db.Timestamptz(6)
+  conversations   conversations @relation(fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  messages        messages?     @relation(fields: [parent_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users           users         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, conversation_id, parent_id])
+  @@index([conversation_id], map: "drafts_conversation_id")
+  @@index([parent_id], map: "drafts_parent_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model events {
+  id              BigInt   @id @default(autoincrement())
+  kind            String
+  conversation_id String?  @db.Uuid
+  user_id         String?  @db.Uuid
+  broadcast       Boolean  @default(false)
+  payload         Json
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([id], map: "events_broadcast", where: raw("broadcast"))
+  @@index([conversation_id, id], map: "events_conversation_id", where: raw("(conversation_id IS NOT NULL)"))
+  @@index([created_at], map: "events_created_at")
+  @@index([user_id, id], map: "events_user_id", where: raw("(user_id IS NOT NULL)"))
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model files {
+  id            String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  uploader_id   String                   @db.Uuid
+  name          String
+  mimetype      String
+  size_bytes    BigInt
+  storage_key   String                   @unique
+  status        String                   @default("pending")
+  width         Int?
+  height        Int?
+  thumbnails    Json                     @default("{}")
+  alt_text      String                   @default("")
+  deleted_at    DateTime?                @db.Timestamptz(6)
+  created_at    DateTime                 @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime                 @default(now()) @db.Timestamptz(6)
+  search_tsv    Unsupported("tsvector")? @default(dbgenerated("to_tsvector('simple'::regconfig, name)"))
+  users         users                    @relation(fields: [uploader_id], references: [id], onUpdate: NoAction)
+  message_files message_files[]
+
+  @@index([created_at], map: "files_pending", where: raw("(status = 'pending'::text)"))
+  @@index([search_tsv], map: "files_search", type: Gin)
+  @@index([uploader_id, created_at], map: "files_uploader_created")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model invites {
+  id                                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                                 String?   @db.Citext
+  token_hash                            Bytes     @unique
+  role                                  String    @default("member")
+  channel_ids                           String[]  @default([]) @db.Uuid
+  invited_by                            String    @db.Uuid
+  max_uses                              Int       @default(1)
+  use_count                             Int       @default(0)
+  expires_at                            DateTime  @db.Timestamptz(6)
+  revoked_at                            DateTime? @db.Timestamptz(6)
+  accepted_user_id                      String?   @db.Uuid
+  created_at                            DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at                            DateTime  @default(now()) @db.Timestamptz(6)
+  users_invites_accepted_user_idTousers users?    @relation("invites_accepted_user_idTousers", fields: [accepted_user_id], references: [id], onUpdate: NoAction)
+  users_invites_invited_byTousers       users     @relation("invites_invited_byTousers", fields: [invited_by], references: [id], onUpdate: NoAction)
+
+  @@index([accepted_user_id], map: "invites_accepted_user_id")
+  @@index([email], map: "invites_email", where: raw("(email IS NOT NULL)"))
+  @@index([invited_by], map: "invites_invited_by")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model login_codes {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email       String    @db.Citext
+  code_hash   Bytes
+  invite_id   String?   @db.Uuid
+  attempts    Int       @default(0)
+  expires_at  DateTime  @db.Timestamptz(6)
+  consumed_at DateTime? @db.Timestamptz(6)
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([email, created_at(sort: Desc)], map: "login_codes_email_created")
+  @@index([expires_at], map: "login_codes_expires_at")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model message_files {
+  message_id String   @db.Uuid
+  file_id    String   @db.Uuid
+  position   Int      @default(0) @db.SmallInt
+  files      files    @relation(fields: [file_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  messages   messages @relation(fields: [message_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([message_id, file_id])
+  @@index([file_id], map: "message_files_file_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model message_mentions {
+  message_id String   @db.Uuid
+  user_id    String   @db.Uuid
+  kind       String
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  messages   messages @relation(fields: [message_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users      users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([message_id, user_id])
+  @@index([user_id, message_id], map: "message_mentions_user_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model message_unfurls {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  message_id  String    @db.Uuid
+  url         String
+  status      String    @default("pending")
+  title       String    @default("")
+  description String    @default("")
+  site_name   String    @default("")
+  image_url   String?
+  hidden      Boolean   @default(false)
+  fetched_at  DateTime? @db.Timestamptz(6)
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime  @default(now()) @db.Timestamptz(6)
+  messages    messages  @relation(fields: [message_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([message_id, url])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model messages {
+  id                                                              String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  seq                                                             BigInt                   @unique @default(autoincrement())
+  conversation_id                                                 String                   @db.Uuid
+  user_id                                                         String                   @db.Uuid
+  client_msg_id                                                   String?                  @db.Uuid
+  subtype                                                         String?
+  text                                                            String                   @default("")
+  parent_id                                                       String?                  @db.Uuid
+  also_in_channel                                                 Boolean                  @default(false)
+  forwarded_message_id                                            String?                  @db.Uuid
+  has_link                                                        Boolean                  @default(false)
+  reply_count                                                     Int                      @default(0)
+  reply_user_ids                                                  String[]                 @default([]) @db.Uuid
+  last_reply_at                                                   DateTime?                @db.Timestamptz(6)
+  edited_at                                                       DateTime?                @db.Timestamptz(6)
+  deleted_at                                                      DateTime?                @db.Timestamptz(6)
+  created_at                                                      DateTime                 @default(now()) @db.Timestamptz(6)
+  updated_at                                                      DateTime                 @default(now()) @db.Timestamptz(6)
+  search_tsv                                                      Unsupported("tsvector")? @default(dbgenerated("(to_tsvector('russian'::regconfig, regexp_replace(text, '<[^>]*>'::text, ' '::text, 'g'::text)) || to_tsvector('english'::regconfig, regexp_replace(text, '<[^>]*>'::text, ' '::text, 'g'::text)))"))
+  activity_items                                                  activity_items[]
+  drafts                                                          drafts[]
+  message_files                                                   message_files[]
+  message_mentions                                                message_mentions[]
+  message_unfurls                                                 message_unfurls[]
+  conversations                                                   conversations            @relation(fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  messages_messages_forwarded_message_idTomessages                messages?                @relation("messages_forwarded_message_idTomessages", fields: [forwarded_message_id], references: [id], onUpdate: NoAction)
+  other_messages_messages_forwarded_message_idTomessages          messages[]               @relation("messages_forwarded_message_idTomessages")
+  messages_messages_parent_idTomessages                           messages?                @relation("messages_parent_idTomessages", fields: [parent_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  other_messages_messages_parent_idTomessages                     messages[]               @relation("messages_parent_idTomessages")
+  users                                                           users                    @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+  pins                                                            pins?
+  reactions                                                       reactions[]
+  reminders                                                       reminders[]
+  saved_items                                                     saved_items[]
+  scheduled_messages_scheduled_messages_parent_idTomessages       scheduled_messages[]     @relation("scheduled_messages_parent_idTomessages")
+  scheduled_messages_scheduled_messages_sent_message_idTomessages scheduled_messages[]     @relation("scheduled_messages_sent_message_idTomessages")
+  thread_subscriptions                                            thread_subscriptions[]
+
+  @@unique([user_id, client_msg_id], map: "messages_client_msg_id", where: raw("(client_msg_id IS NOT NULL)"))
+  @@index([conversation_id, seq], map: "messages_channel_feed", where: raw("((parent_id IS NULL) OR also_in_channel)"))
+  @@index([conversation_id, seq], map: "messages_conversation_seq")
+  @@index([forwarded_message_id], map: "messages_forwarded_message_id", where: raw("(forwarded_message_id IS NOT NULL)"))
+  @@index([parent_id, seq], map: "messages_parent_seq", where: raw("(parent_id IS NOT NULL)"))
+  @@index([search_tsv], map: "messages_search", type: Gin)
+  @@index([user_id, created_at], map: "messages_user_created")
+}
+
+model pins {
+  message_id      String        @id @db.Uuid
+  conversation_id String        @db.Uuid
+  pinned_by       String        @db.Uuid
+  created_at      DateTime      @default(now()) @db.Timestamptz(6)
+  conversations   conversations @relation(fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  messages        messages      @relation(fields: [message_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users           users         @relation(fields: [pinned_by], references: [id], onUpdate: NoAction)
+
+  @@index([conversation_id, created_at(sort: Desc)], map: "pins_conversation_created")
+  @@index([pinned_by], map: "pins_pinned_by")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model reactions {
+  message_id String   @db.Uuid
+  user_id    String   @db.Uuid
+  emoji      String
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  messages   messages @relation(fields: [message_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users      users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([message_id, emoji, user_id])
+  @@index([user_id], map: "reactions_user_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model reminders {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id      String    @db.Uuid
+  text         String
+  message_id   String?   @db.Uuid
+  remind_at    DateTime  @db.Timestamptz(6)
+  recurrence   String?
+  fired_at     DateTime? @db.Timestamptz(6)
+  completed_at DateTime? @db.Timestamptz(6)
+  created_at   DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime  @default(now()) @db.Timestamptz(6)
+  messages     messages? @relation(fields: [message_id], references: [id], onUpdate: NoAction)
+  users        users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([remind_at], map: "reminders_due", where: raw("(completed_at IS NULL)"))
+  @@index([message_id], map: "reminders_message_id")
+  @@index([user_id, remind_at], map: "reminders_user_id")
+}
+
+model saved_items {
+  user_id      String    @db.Uuid
+  message_id   String    @db.Uuid
+  completed_at DateTime? @db.Timestamptz(6)
+  created_at   DateTime  @default(now()) @db.Timestamptz(6)
+  messages     messages  @relation(fields: [message_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users        users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([user_id, message_id])
+  @@index([message_id], map: "saved_items_message_id")
+  @@index([user_id, created_at(sort: Desc)], map: "saved_items_user_created")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model scheduled_messages {
+  id                                                    String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                                               String        @db.Uuid
+  conversation_id                                       String        @db.Uuid
+  parent_id                                             String?       @db.Uuid
+  text                                                  String
+  file_ids                                              String[]      @default([]) @db.Uuid
+  post_at                                               DateTime      @db.Timestamptz(6)
+  status                                                String        @default("scheduled")
+  sent_message_id                                       String?       @db.Uuid
+  error                                                 String?
+  created_at                                            DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at                                            DateTime      @default(now()) @db.Timestamptz(6)
+  conversations                                         conversations @relation(fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  messages_scheduled_messages_parent_idTomessages       messages?     @relation("scheduled_messages_parent_idTomessages", fields: [parent_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  messages_scheduled_messages_sent_message_idTomessages messages?     @relation("scheduled_messages_sent_message_idTomessages", fields: [sent_message_id], references: [id], onUpdate: NoAction)
+  users                                                 users         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([conversation_id], map: "scheduled_messages_conversation_id")
+  @@index([post_at], map: "scheduled_messages_due", where: raw("(status = 'scheduled'::text)"))
+  @@index([parent_id], map: "scheduled_messages_parent_id")
+  @@index([sent_message_id], map: "scheduled_messages_sent_message_id")
+  @@index([user_id, post_at], map: "scheduled_messages_user_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model sessions {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id      String    @db.Uuid
+  token_hash   Bytes     @unique
+  client       String    @default("web")
+  user_agent   String    @default("")
+  ip           String?   @db.Inet
+  expires_at   DateTime  @db.Timestamptz(6)
+  last_used_at DateTime  @default(now()) @db.Timestamptz(6)
+  revoked_at   DateTime? @db.Timestamptz(6)
+  created_at   DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime  @default(now()) @db.Timestamptz(6)
+  users        users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([expires_at], map: "sessions_expires_at")
+  @@index([user_id], map: "sessions_user_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model sidebar_sections {
+  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id              String                 @db.Uuid
+  name                 String
+  emoji                String                 @default("")
+  sort                 String                 @default("manual")
+  position             Int                    @default(0)
+  collapsed            Boolean                @default(false)
+  created_at           DateTime               @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime               @default(now()) @db.Timestamptz(6)
+  conversation_members conversation_members[]
+  users                users                  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id, position], map: "sidebar_sections_user_id")
+}
+
+model thread_subscriptions {
+  user_id           String   @db.Uuid
+  parent_message_id String   @db.Uuid
+  subscribed        Boolean  @default(true)
+  last_read_seq     BigInt   @default(0)
+  updated_at        DateTime @default(now()) @db.Timestamptz(6)
+  messages          messages @relation(fields: [parent_message_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users             users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([user_id, parent_message_id])
+  @@index([parent_message_id], map: "thread_subscriptions_parent")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model user_preferences {
+  user_id                       String   @id @db.Uuid
+  notify_level                  String   @default("mentions")
+  notify_keywords               String[] @default([])
+  desktop_notifications         Boolean  @default(true)
+  notification_sound            String   @default("default")
+  show_message_preview          Boolean  @default(true)
+  notify_thread_replies         Boolean  @default(true)
+  notification_schedule         Json?
+  badge_includes_thread_replies Boolean  @default(true)
+  enter_sends                   Boolean  @default(true)
+  theme                         String   @default("system")
+  ui                            Json     @default("{}")
+  created_at                    DateTime @default(now()) @db.Timestamptz(6)
+  updated_at                    DateTime @default(now()) @db.Timestamptz(6)
+  users                         users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model users {
+  id                                              String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                                           String                 @unique @db.Citext
+  google_sub                                      String?                @unique
+  role                                            String                 @unique(map: "users_one_primary_owner", where: raw("(role = 'primary_owner'::text)")) @default("member")
+  display_name                                    String
+  real_name                                       String                 @default("")
+  title                                           String                 @default("")
+  pronouns                                        String                 @default("")
+  phone                                           String                 @default("")
+  avatar_key                                      String?
+  tz                                              String                 @default("UTC")
+  locale                                          String                 @default("ru")
+  status_text                                     String                 @default("")
+  status_emoji                                    String                 @default("")
+  status_expires_at                               DateTime?              @db.Timestamptz(6)
+  status_pauses_notifications                     Boolean                @default(false)
+  dnd_until                                       DateTime?              @db.Timestamptz(6)
+  onboarded_at                                    DateTime?              @db.Timestamptz(6)
+  deactivated_at                                  DateTime?              @db.Timestamptz(6)
+  created_at                                      DateTime               @default(now()) @db.Timestamptz(6)
+  updated_at                                      DateTime               @default(now()) @db.Timestamptz(6)
+  activity_items_activity_items_actor_idTousers   activity_items[]       @relation("activity_items_actor_idTousers")
+  activity_items_activity_items_user_idTousers    activity_items[]       @relation("activity_items_user_idTousers")
+  auth_handoffs                                   auth_handoffs[]
+  bookmarks                                       bookmarks[]
+  conversation_members                            conversation_members[]
+  conversations_conversations_archived_byTousers  conversations[]        @relation("conversations_archived_byTousers")
+  conversations_conversations_created_byTousers   conversations[]        @relation("conversations_created_byTousers")
+  conversations_conversations_topic_set_byTousers conversations[]        @relation("conversations_topic_set_byTousers")
+  custom_emoji                                    custom_emoji[]
+  drafts                                          drafts[]
+  files                                           files[]
+  invites_invites_accepted_user_idTousers         invites[]              @relation("invites_accepted_user_idTousers")
+  invites_invites_invited_byTousers               invites[]              @relation("invites_invited_byTousers")
+  message_mentions                                message_mentions[]
+  messages                                        messages[]
+  pins                                            pins[]
+  reactions                                       reactions[]
+  reminders                                       reminders[]
+  saved_items                                     saved_items[]
+  scheduled_messages                              scheduled_messages[]
+  sessions                                        sessions[]
+  sidebar_sections                                sidebar_sections[]
+  thread_subscriptions                            thread_subscriptions[]
+  user_preferences                                user_preferences?
+
+  @@index([display_name(ops: raw("gin_trgm_ops"))], map: "users_display_name_trgm", type: Gin)
+  @@index([dnd_until], map: "users_dnd_until", where: raw("(dnd_until IS NOT NULL)"))
+  @@index([real_name(ops: raw("gin_trgm_ops"))], map: "users_real_name_trgm", type: Gin)
+  @@index([status_expires_at], map: "users_status_expires_at", where: raw("(status_expires_at IS NOT NULL)"))
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model workspace_settings {
+  id                          Int      @id @default(1) @db.SmallInt
+  name                        String
+  icon_key                    String?
+  allowed_email_domains       String[] @default([])
+  who_can_create_channels     String   @default("everyone")
+  who_can_archive_channels    String   @default("everyone")
+  who_can_invite              String   @default("everyone")
+  who_can_add_emoji           String   @default("everyone")
+  message_edit_window_minutes Int?
+  created_at                  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at                  DateTime @default(now()) @db.Timestamptz(6)
+}

@@ -2,14 +2,20 @@
   "name": "teamchat",
   "private": true,
   "workspaces": [
-    "apps/*",
-    "packages/*"
+    "packages/*",
+    "apps/*"
   ],
   "scripts": {
     "tokens": "node scripts/build-tokens.mjs",
+    "dev": "npm run build -w @teamchat/shared && concurrently -k -n shared,api,web -c gray,blue,magenta \"npm run dev -w @teamchat/shared\" \"npm run dev -w @teamchat/api\" \"npm run dev -w @teamchat/web\"",
     "dev:web": "npm run dev -w @teamchat/web",
-    "build:web": "npm run build -w @teamchat/web",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "build": "npm run build -w @teamchat/shared && npm run build -w @teamchat/api && npm run build -w @teamchat/web",
+    "start": "npm run start -w @teamchat/api",
+    "typecheck": "npm run build -w @teamchat/shared && npm run typecheck --workspaces --if-present",
+    "test:e2e": "npm run test:e2e -w @teamchat/api"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.6"
   },
   "engines": {
     "node": ">=22.19"

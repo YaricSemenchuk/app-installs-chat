@@ -1,0 +1,39 @@
+{
+  "name": "@teamchat/api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prisma:generate": "prisma generate",
+    "build": "prisma generate && tsc -p tsconfig.json",
+    "dev": "prisma generate && tsc -p tsconfig.json && concurrently -k -n tsc,api -c gray,blue \"tsc -p tsconfig.json --watch --preserveWatchOutput\" \"node --watch --env-file-if-exists=.env dist/main.js\"",
+    "start": "prisma migrate deploy && node dist/main.js",
+    "migrate": "prisma migrate deploy",
+    "typecheck": "prisma generate && tsc -p tsconfig.json --noEmit",
+    "test:e2e": "node --test \"test/*.test.mjs\""
+  },
+  "dependencies": {
+    "@nestjs/common": "^12.1.3",
+    "@nestjs/core": "^12.1.3",
+    "@nestjs/platform-express": "^12.1.3",
+    "@nestjs/platform-socket.io": "^12.1.3",
+    "@nestjs/websockets": "^12.1.3",
+    "@prisma/adapter-pg": "7.10.1",
+    "@prisma/client": "7.10.1",
+    "@teamchat/shared": "*",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^18.0.8",
+    "prisma": "7.10.1",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "socket.io": "^4.8.4",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.10",
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.20.5",
+    "concurrently": "^10.0.6",
+    "socket.io-client": "^4.8.4",
+    "typescript": "~6.0.3"
+  }
+}
