@@ -1,0 +1,96 @@
+@use "../styles/mixins" as *;
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.label {
+  color: var(--color-text);
+  @include type(body);
+}
+
+.hidden {
+  @include visually-hidden;
+}
+
+.control {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  padding: 0 var(--space-12);
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-input);
+  background: var(--color-bg);
+  @include transition(border-color, box-shadow);
+
+  &:hover {
+    border-color: var(--color-text-muted);
+  }
+
+  &:focus-within {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 1px var(--color-accent);
+  }
+}
+
+.s {
+  height: var(--size-control-s);
+}
+
+.m {
+  height: var(--size-control-m);
+}
+
+.invalid,
+.invalid:hover {
+  border-color: var(--color-danger-text);
+}
+
+.disabled {
+  opacity: 0.45;
+}
+
+.icon,
+.prefix {
+  display: inline-flex;
+  flex: none;
+  color: var(--color-text-muted);
+
+  svg {
+    width: var(--size-icon);
+    height: var(--size-icon);
+  }
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--color-text);
+  @include type(body-read);
+
+  &::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  &:focus-visible {
+    outline: none;
+  }
+}
+
+.hint {
+  color: var(--color-text-muted);
+  @include type(caption);
+}
+
+.error {
+  color: var(--color-danger-text);
+  @include type(caption);
+}

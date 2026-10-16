@@ -1,0 +1,126 @@
+feature,area,priority,original,clone,notes
+Вход по email с одноразовым кодом,auth,must,yes,no,S01; нужен email-провайдер
+Вход через Google,auth,could,yes,no,если компания на Google Workspace
+Несколько сессий и выход со всех устройств,auth,should,yes,no,нужно и для офбординга
+Приглашение по email (срок 30 дней),workspace,must,yes,no,S36 S02 F01 F03
+Ссылка-приглашение со сроком и лимитом использований,workspace,should,yes,no,у Slack 30 дней и до 400 использований
+Запрос на приглашение с одобрением админом,workspace,could,yes,no,
+Профиль при первом входе: имя и аватар,workspace,must,yes,no,S02
+Роли owner / admin / member,admin,must,yes,no,primary owner нельзя деактивировать
+Деактивация и реактивация участника,admin,must,yes,no,S37 F24; выход из всех сессий; сообщения остаются
+Каналы по умолчанию для новичков,admin,should,yes,no,только публичные; #general всегда
+Политики: кто создаёт и кто архивирует каналы,admin,should,yes,no,S38
+Окно редактирования сообщений: всегда / никогда / N минут,admin,could,yes,no,
+Гостевые аккаунты,admin,could,yes,no,у Slack платно; для внутренней команды вряд ли нужно
+Группы пользователей (@team),admin,could,yes,no,у Slack платно
+Сайдбар с разделами Каналы и ЛС,sidebar,must,yes,no,S04
+Свои разделы сайдбара,sidebar,should,yes,no,у Slack платно
+Фильтр «только активные» и скрытие замьюченных,sidebar,could,yes,no,
+Сортировка в разделах: A-Z / недавние,sidebar,could,yes,no,
+Избранные разговоры (звёздочка),sidebar,could,yes,no,
+Создание публичного и приватного канала,channels,must,yes,no,S10 F08
+Правила имени канала: до 80 символов / a-z 0-9 - _ / уникально,channels,must,yes,no,
+Тема и описание канала (до 250 символов),channels,must,yes,no,S08
+Детали канала: участники и настройки,channels,must,yes,no,S08 S09
+Добавление и удаление участников канала,channels,must,yes,no,S12
+Вступление и выход из канала (/leave),channels,must,yes,no,#general нельзя покинуть
+Каталог каналов с поиском,channels,must,yes,no,S11 F09
+#general защищён от выхода / архива / удаления,channels,must,yes,no,
+Архивация и разархивация канала,channels,should,yes,no,F23; архив только для чтения
+Удаление канала (только админы),channels,could,yes,no,необратимо
+Публичный канал → приватный,channels,could,yes,no,необратимо
+Ограничение постинга и @here/@channel в канале,channels,could,yes,no,S09
+Закреплённые сообщения (Pins),channels,should,yes,no,S29 F21
+Закладки-ссылки канала,channels,could,yes,no,до 100 на разговор
+Системные сообщения: вход / выход / тема / переименование,channels,should,yes,no,в общем потоке сообщений
+Личные сообщения 1:1,dms,must,yes,no,S06 F07; повторное открытие возвращает существующее ЛС
+Групповые ЛС до 9 человек,dms,must,yes,no,
+ЛС с самим собой (заметки),dms,should,yes,no,
+Переименование группового ЛС,dms,could,yes,no,
+Групповое ЛС → приватный канал,dms,could,yes,no,
+Отправка: Enter / перенос строки Shift+Enter,messaging,must,yes,no,с опцией ⌘Enter для отправки
+Группировка сообщений по автору и времени,messaging,must,yes,no,
+Правка своего сообщения с меткой «изменено»,messaging,must,yes,no,S16 F12
+Удаление своего сообщения,messaging,must,yes,no,админ может удалять чужие
+Отмена отправки в течение 15 секунд,messaging,could,yes,no,
+Копировать ссылку на сообщение,messaging,must,yes,no,прыжок к сообщению с подсветкой
+Пересылка сообщения,messaging,should,yes,no,S17 F22
+Превью ссылок (unfurl),messaging,should,yes,no,риск SSRF: блок внутренних адресов / таймауты / лимит размера
+Подгрузка истории при прокрутке вверх,messaging,must,yes,no,
+Форматирование: жирный / курсив / зачёркнутый / код / блок кода / цитата / списки / ссылки,composer,must,yes,no,
+Панель форматирования и горячие клавиши форматирования,composer,should,yes,no,
+@упоминания людей с автодополнением,composer,must,yes,no,S19 F05; хранить как id-токены
+Упоминания #каналов,composer,should,yes,no,
+@here / @channel с подтверждением в канале от 6 человек,composer,should,yes,no,
+Эмодзи-пикер и автодополнение :shortcode:,composer,must,yes,no,S18
+Черновики с синхронизацией между устройствами,composer,should,yes,no,S21
+Отложенная отправка,composer,should,yes,no,S20 F18; до 120 дней вперёд
+Слэш-команды: /leave /topic /dnd /status /remind,composer,could,yes,no,
+Ответ в треде,threads,must,yes,no,S07 F06; один уровень
+Сводка треда под сообщением: аватары / число ответов / время,threads,must,yes,no,
+Ответ в тред с публикацией в канал,threads,should,yes,no,
+Подписка и отписка от треда,threads,should,yes,no,
+Вид «Треды»,threads,should,yes,no,S22
+Эмодзи-реакции со счётчиком и списком людей,reactions,must,yes,no,F11
+Свои эмодзи и алиасы,emoji,should,yes,no,S39
+Загрузка файлов: drag-and-drop и скрепка (до 10 за раз),files,must,yes,no,S05 F10; presigned upload в бакет
+Превью изображений и миниатюры,files,must,yes,no,
+Полноэкранный просмотр изображений,files,should,yes,no,
+Вид «Файлы»,files,should,yes,no,S28
+Доступ к файлу только у участников разговоров с ним,files,must,yes,no,раздача через presigned URL
+Поиск по сообщениям по всей истории,search,must,yes,no,S26 F13; Postgres FTS
+Модификаторы поиска: in: from: has: before: after: during: is:thread,search,should,yes,no,
+Вкладки результатов: сообщения / файлы / люди / каналы,search,should,yes,no,
+Поиск внутри разговора (⌘F),search,could,yes,no,
+Быстрый переключатель ⌘K,search,must,yes,no,S27 F14
+Курсор прочитанного на разговор с синхронизацией устройств,read-state,must,yes,no,дебаунс ~5 с
+Счётчики непрочитанного и упоминаний в сайдбаре,read-state,must,yes,no,
+Разделитель «Новые» и переход к первому непрочитанному,read-state,must,yes,no,
+Отметить непрочитанным,read-state,should,yes,no,
+Отметить прочитанным: Esc / всё: Shift+Esc,read-state,should,yes,no,
+Вид «Непрочитанное» (Unreads),read-state,could,yes,no,S23
+Лента Activity: упоминания / ответы / реакции / ЛС,activity,should,yes,no,S24 F16
+Свои представления Activity,activity,could,yes,no,
+Сохранить сообщение на потом,saved,should,yes,no,S25; у Slack теперь Saved и To-dos
+Напоминание о сообщении и /remind,saved,should,yes,no,S42
+Десктоп-уведомления о ЛС / упоминаниях / ответах в тредах,notifications,must,yes,no,S41
+Глобальный уровень уведомлений: всё / упоминания и ЛС,notifications,must,yes,no,S34
+Уведомления на разговор: все / упоминания / mute,notifications,should,yes,no,S35
+Пауза уведомлений (DND) на время,notifications,should,yes,no,S33
+Расписание уведомлений (рабочие часы),notifications,could,yes,no,
+Ключевые слова для уведомлений,notifications,could,yes,no,
+Звук и превью текста в уведомлении,notifications,could,yes,no,
+Браузерный push при закрытой вкладке,notifications,could,yes,no,web push через service worker
+Присутствие active / away с авто-away через 10 минут,presence,must,yes,no,по подписке
+Ручной режим away,presence,could,yes,no,
+Статус: эмодзи + текст + срок,presence,should,yes,no,S32 F20; текст до 100 символов
+Профиль: имя / должность / часовой пояс / локальное время,presence,should,yes,no,S31
+Индикатор «печатает…»,realtime,should,yes,no,
+Новые сообщения появляются без перезагрузки,realtime,must,yes,no,WebSocket
+Переподключение и догрузка пропущенного после обрыва,realtime,must,yes,no,S43; на Railway обязательно
+Правки / удаления / реакции синхронизируются в реальном времени,realtime,must,yes,no,
+Десктоп-приложение Electron для macOS и Windows,desktop,must,yes,no,
+Бейдж непрочитанного на иконке приложения,desktop,must,yes,no,
+Работа в трее / меню-баре при закрытом окне,desktop,should,yes,no,
+Диплинки на канал / ЛС / сообщение,desktop,should,yes,no,F25; своя URL-схема
+Автообновление десктоп-приложения,desktop,should,yes,no,
+Подписанные сборки (macOS нотаризация / Windows),desktop,should,yes,no,нужен Apple Developer
+Автозапуск при входе в систему,desktop,could,yes,no,
+Отдельное окно для треда или разговора,desktop,could,yes,no,
+Редактировать последнее сообщение по ↑,keyboard,should,yes,no,
+Навигация: ⌥↑/↓ по сайдбару и ⌥⇧↑/↓ по непрочитанному,keyboard,could,yes,no,
+Справка по горячим клавишам ⌘/,keyboard,could,yes,no,S40
+Светлая и тёмная тема,appearance,should,yes,no,
+Huddles: аудио/видео-звонки,calls,could,yes,skip,вне среза v1; отдельный этап (WebRTC через LiveKit)
+Боты и входящие вебхуки,integrations,could,yes,skip,вне среза v1; следующий этап после ядра
+Slack Connect: каналы с другими компаниями,network,could,yes,skip,сеть Slack; у нас внутренний чат
+Маркетплейс приложений,integrations,could,yes,skip,партнёрская экосистема Slack
+Workflows и Agents & tools,integrations,could,yes,skip,отдельный продукт
+Slack AI / Slackbot-агент / сводки,ai,could,yes,skip,отдельный продукт; позже можно своё на Claude
+Canvases и Lists,docs,could,yes,skip,отдельный продукт
+Clips: видео- и аудиозаметки,messaging,could,yes,skip,вне среза v1
+SAML SSO / Enterprise Grid / кастомные роли,admin,could,yes,skip,не нужно для команды до 30 человек
+Политики хранения данных (retention),admin,could,yes,skip,решим в архитектуре: бессрочно + бэкапы
+Мобильные приложения и мобильный push,mobile,could,yes,skip,платформы вне скоупа: web + desktop
+Шаблоны каналов и emoji packs,channels,could,yes,skip,контент Slack
+Вход по passkey,auth,could,yes,skip,позже при необходимости

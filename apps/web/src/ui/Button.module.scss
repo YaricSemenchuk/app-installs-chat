@@ -1,0 +1,87 @@
+@use "../styles/mixins" as *;
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-8);
+  border: 1px solid transparent;
+  border-radius: var(--radius-button);
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  @include type(body);
+  @include transition(background-color, border-color, color);
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  &[aria-busy="true"] {
+    opacity: 1;
+    cursor: progress;
+  }
+}
+
+.s {
+  height: var(--size-control-s);
+  padding: 0 var(--space-12);
+}
+
+.m {
+  height: var(--size-control-m);
+  padding: 0 var(--space-16);
+}
+
+.l {
+  height: var(--size-control-l);
+  padding: 0 var(--space-24);
+  font-size: var(--type-title-size);
+}
+
+.primary {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+
+  &:hover:not(:disabled) {
+    background: var(--color-accent-hover);
+  }
+}
+
+.secondary {
+  background: var(--color-accent-soft);
+  color: var(--color-link);
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-link);
+  }
+}
+
+.ghost {
+  background: transparent;
+  color: var(--color-text-secondary);
+
+  &:hover:not(:disabled) {
+    background: var(--color-surface-hover);
+    color: var(--color-text);
+  }
+}
+
+.danger {
+  background: var(--color-danger);
+  color: var(--color-on-danger);
+
+  &:hover:not(:disabled) {
+    background: var(--color-danger-hover);
+  }
+}
+
+.dangerGhost {
+  background: transparent;
+  color: var(--color-danger-text);
+
+  &:hover:not(:disabled) {
+    background: var(--color-surface-hover);
+  }
+}

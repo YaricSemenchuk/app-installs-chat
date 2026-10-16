@@ -1,0 +1,66 @@
+@use "../styles/mixins" as *;
+
+.list {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  border: 0;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  @include type(body);
+  @include transition(color, background-color, box-shadow);
+
+  &:hover {
+    color: var(--color-text);
+  }
+
+  svg {
+    width: var(--size-icon);
+    height: var(--size-icon);
+  }
+}
+
+.underline {
+  gap: var(--space-16);
+
+  .tab {
+    height: 36px;
+    padding: 0 var(--space-2);
+    border-radius: 0;
+    box-shadow: inset 0 -2px 0 transparent;
+
+    &[data-state="active"] {
+      color: var(--color-text);
+      box-shadow: inset 0 -2px 0 var(--color-accent);
+    }
+  }
+}
+
+.pills {
+  .tab {
+    height: var(--size-control-xs);
+    padding: 0 var(--space-12);
+    border-radius: var(--radius-pill);
+
+    &:hover {
+      background: var(--color-surface-hover);
+    }
+
+    &[data-state="active"] {
+      background: var(--color-accent-soft);
+      color: var(--color-text);
+    }
+  }
+}
+
+.count {
+  color: var(--color-text-muted);
+  @include type(label);
+}

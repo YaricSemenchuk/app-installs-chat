@@ -1,0 +1,24 @@
+@use "../styles/mixins" as *;
+
+.content {
+  display: inline-flex;
+  padding: var(--space-4) var(--space-8);
+  border-radius: var(--radius-chip);
+  background: var(--color-tooltip-bg);
+  color: var(--color-tooltip-text);
+  @include type(label);
+  z-index: 50;
+  animation: appear var(--motion-fast) var(--motion-ease);
+}
+
+.body {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+@keyframes appear {
+  from {
+    opacity: 0;
+  }
+}

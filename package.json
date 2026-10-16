@@ -1,0 +1,17 @@
+{
+  "name": "teamchat",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "tokens": "node scripts/build-tokens.mjs",
+    "dev:web": "npm run dev -w @teamchat/web",
+    "build:web": "npm run build -w @teamchat/web",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=22.19"
+  }
+}

@@ -1,0 +1,442 @@
+@use "../styles/mixins" as *;
+
+.message {
+  position: relative;
+  display: flex;
+  gap: var(--space-8);
+  padding: var(--space-8) var(--layout-message-gutter) var(--space-4);
+  outline: none;
+  @include transition(background-color);
+  --presence-ring: var(--color-bg);
+
+  &:hover,
+  &:focus-visible,
+  &:focus-within,
+  &.hover {
+    background: var(--color-surface-hover);
+
+    .actions {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .gutterTime {
+      visibility: visible;
+    }
+  }
+
+  &:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--color-focus-ring);
+  }
+}
+
+.continuation {
+  padding-top: var(--space-2);
+}
+
+.mentionsMe {
+  background: var(--color-highlight);
+  box-shadow: inset 2px 0 0 var(--color-highlight-edge);
+
+  &:hover {
+    background: var(--color-highlight);
+  }
+}
+
+.highlighted {
+  background: var(--color-highlight);
+}
+
+.sending .body {
+  opacity: 0.6;
+}
+
+.gutter {
+  flex: none;
+  width: var(--size-avatar-l);
+  padding-top: var(--space-2);
+}
+
+.gutterTime {
+  display: block;
+  padding-top: var(--space-2);
+  color: var(--color-text-muted);
+  text-align: right;
+  visibility: hidden;
+  @include type(caption);
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+}
+
+.meta {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-8);
+}
+
+.author {
+  color: var(--color-text);
+  @include type(name);
+}
+
+.status {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.time {
+  color: var(--color-text-muted);
+  @include type(caption);
+}
+
+.body {
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+  @include type(message);
+
+  p + p {
+    margin-top: var(--space-4);
+  }
+
+  a {
+    color: var(--color-link);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  strong {
+    font-weight: 600;
+  }
+}
+
+// «(изменено)» продолжает последний абзац, а не уходит на новую строку.
+.bodyEdited > p:last-of-type {
+  display: inline;
+}
+
+.edited {
+  color: var(--color-text-muted);
+  @include type(caption);
+}
+
+.note {
+  color: var(--color-text-muted);
+  @include type(caption);
+}
+
+.failedNote {
+  color: var(--color-danger-text);
+
+  button {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+    font: inherit;
+  }
+}
+
+.mention {
+  padding: 0 var(--space-2);
+  border-radius: 4px;
+  background: var(--color-mention-bg);
+  color: var(--color-mention-text);
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.mentionMe {
+  background: var(--color-mention-me-bg);
+  color: var(--color-mention-me-text);
+}
+
+.code {
+  padding: 1px var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-code-bg);
+  color: var(--color-code-text);
+  font-family: var(--font-mono);
+  @include type(code);
+}
+
+.codeBlock {
+  margin: var(--space-4) 0 0;
+  padding: var(--space-8) var(--space-12);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-chip);
+  background: var(--color-code-bg);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  overflow-x: auto;
+  @include type(code);
+}
+
+.reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.reaction {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: 24px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  @include transition(border-color, background-color);
+
+  &:hover {
+    border-color: var(--color-border-strong);
+  }
+}
+
+.reactionMine {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+
+  .reactionCount {
+    color: var(--color-link);
+  }
+}
+
+.reactionEmoji {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.reactionCount {
+  @include type(label);
+}
+
+.reactionAdd {
+  width: 32px;
+  justify-content: center;
+  color: var(--color-text-muted);
+  opacity: 0;
+
+  .message:hover &,
+  .message.hover & {
+    opacity: 1;
+  }
+
+  svg {
+    width: var(--size-icon);
+    height: var(--size-icon);
+  }
+}
+
+.thread {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  max-width: 600px;
+  margin: var(--space-4) 0 0 calc(var(--space-4) * -1);
+  padding: var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-chip);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+
+  &:hover {
+    border-color: var(--color-border);
+    background: var(--color-raised);
+  }
+}
+
+.threadAvatars {
+  display: inline-flex;
+  gap: var(--space-2);
+}
+
+.threadDot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+}
+
+.threadCount {
+  color: var(--color-link);
+  @include type(body);
+}
+
+.threadLast {
+  color: var(--color-text-muted);
+  @include type(caption);
+}
+
+.actions {
+  position: absolute;
+  top: -16px;
+  right: var(--layout-message-gutter);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-input);
+  background: var(--color-raised);
+  box-shadow: var(--shadow-pop);
+  opacity: 0;
+  pointer-events: none;
+  @include transition(opacity);
+}
+
+.quickReaction {
+  width: var(--size-control-xs);
+  height: var(--size-control-xs);
+  border: 0;
+  border-radius: var(--radius-chip);
+  background: transparent;
+  font-size: 16px;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--color-surface-hover);
+  }
+}
+
+.actionsDivider {
+  width: 1px;
+  height: 16px;
+  margin: 0 var(--space-2);
+  background: var(--color-border);
+}
+
+.file {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  max-width: 400px;
+  margin-top: var(--space-8);
+  padding: var(--space-8) var(--space-8) var(--space-8) var(--space-8);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-input);
+  background: var(--color-bg);
+}
+
+.fileIcon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-chip);
+  background: var(--color-avatar-1);
+  color: var(--color-on-avatar);
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.fileText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fileName {
+  color: var(--color-text);
+  @include type(body);
+  @include truncate;
+}
+
+.fileMeta {
+  color: var(--color-text-muted);
+  @include type(caption);
+}
+
+.system {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  padding: var(--space-4) var(--layout-message-gutter);
+  color: var(--color-text-secondary);
+  @include type(caption);
+}
+
+.systemIcon {
+  display: inline-flex;
+  justify-content: center;
+  width: var(--size-avatar-l);
+  color: var(--color-text-muted);
+
+  svg {
+    width: var(--size-icon);
+    height: var(--size-icon);
+  }
+}
+
+.dateDivider {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  margin: var(--space-16) 0 var(--space-4);
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 0;
+    left: 0;
+    border-top: 1px solid var(--color-border);
+  }
+
+  span {
+    position: relative;
+    padding: 2px var(--space-12);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    background: var(--color-bg);
+    color: var(--color-text-secondary);
+    @include type(label);
+  }
+}
+
+.unreadDivider {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+  margin: var(--space-8) var(--layout-message-gutter) 0;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 0;
+    left: 0;
+    border-top: 1px solid var(--color-accent);
+  }
+
+  span {
+    position: relative;
+    padding-left: var(--space-8);
+    background: var(--color-bg);
+    color: var(--color-link);
+    @include type(label);
+  }
+}

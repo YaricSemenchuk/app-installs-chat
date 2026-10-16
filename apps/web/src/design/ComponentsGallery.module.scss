@@ -1,0 +1,132 @@
+@use "../styles/mixins" as *;
+
+.gallery {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: var(--space-24) var(--space-24) var(--space-40);
+}
+
+.section {
+  padding: var(--space-24) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.sectionTitle {
+  margin-bottom: var(--space-16);
+  color: var(--color-text);
+  @include type(heading-s);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+  padding: var(--space-8) 0;
+}
+
+.rowLabel {
+  flex: none;
+  width: 140px;
+  color: var(--color-text-muted);
+  @include type(caption);
+}
+
+.rowItems {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-12);
+}
+
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--space-8);
+}
+
+.swatch {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-width: 0;
+}
+
+.swatchColor {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-chip);
+}
+
+.swatchName {
+  color: var(--color-text-secondary);
+  @include type(caption);
+  @include truncate;
+}
+
+.typeList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.typeRow {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  align-items: baseline;
+  gap: var(--space-16);
+  color: var(--color-text);
+}
+
+.typeMeta {
+  color: var(--color-text-muted);
+  @include type(caption);
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-16) var(--space-24);
+  max-width: 760px;
+}
+
+.inlineSample {
+  @include type(message);
+}
+
+.overlays {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: var(--space-32);
+  align-items: start;
+}
+
+.overlayCol {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-12);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  max-width: 760px;
+  margin-bottom: var(--space-8);
+  border: 1px solid var(--color-border);
+}
+
+.skeletonLines {
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.emptyBox {
+  max-width: 760px;
+  margin-top: var(--space-8);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-card);
+}

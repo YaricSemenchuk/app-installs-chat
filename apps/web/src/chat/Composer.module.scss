@@ -1,0 +1,92 @@
+@use "../styles/mixins" as *;
+
+.wrap {
+  padding: 0 var(--layout-message-gutter) var(--space-4);
+}
+
+.composer {
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-input);
+  background: var(--color-bg);
+  @include transition(border-color, box-shadow);
+
+  &:focus-within,
+  &.focused {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 1px var(--color-accent);
+  }
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-4) 0;
+}
+
+.divider {
+  width: 1px;
+  height: 16px;
+  margin: 0 var(--space-4);
+  background: var(--color-border);
+}
+
+.field {
+  min-height: var(--layout-composer-min);
+  max-height: 50vh;
+  padding: var(--space-8) var(--space-12) var(--space-4);
+  overflow-y: auto;
+  color: var(--color-text);
+  outline: none;
+  @include type(message);
+}
+
+.placeholder {
+  color: var(--color-text-muted);
+}
+
+.bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-4) var(--space-4);
+}
+
+.tools {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.send {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border-radius: var(--radius-chip);
+
+  button {
+    border-radius: 0;
+  }
+
+  button:last-child {
+    width: 20px;
+  }
+}
+
+.sendDivider {
+  width: 1px;
+  height: var(--size-control-xs);
+  background: var(--color-on-accent);
+  opacity: 0.4;
+}
+
+.under {
+  display: flex;
+  align-items: center;
+  min-height: 24px;
+  padding: var(--space-2) var(--space-4) 0;
+}
+
+.typing {
+  color: var(--color-text-muted);
+  @include type(caption);
+}

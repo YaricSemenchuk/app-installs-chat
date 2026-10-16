@@ -1,0 +1,134 @@
+@use "../styles/mixins" as *;
+
+.badge {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  @include type(label);
+}
+
+.mention {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.muted {
+  background: var(--color-border-strong);
+  color: var(--color-text);
+}
+
+.skeleton {
+  display: inline-block;
+  border-radius: var(--radius-chip);
+  background: var(--color-border-strong);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.round {
+  border-radius: var(--radius-pill);
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-8);
+  max-width: 360px;
+  margin: 0 auto;
+  padding: var(--space-32) var(--space-16);
+  text-align: center;
+}
+
+.emptyIcon {
+  display: inline-flex;
+  color: var(--color-text-muted);
+
+  svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.emptyTitle {
+  color: var(--color-text);
+  @include type(title);
+}
+
+.emptyText {
+  margin-bottom: var(--space-8);
+  color: var(--color-text-secondary);
+  @include type(body-read);
+}
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  height: 32px;
+  padding: 0 var(--space-20);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-highlight);
+  color: var(--color-text);
+  @include type(body);
+
+  svg {
+    width: var(--size-icon);
+    height: var(--size-icon);
+  }
+}
+
+.reconnecting {
+  box-shadow: inset 3px 0 0 var(--color-highlight-edge);
+}
+
+.offline {
+  box-shadow: inset 3px 0 0 var(--color-danger-text);
+}
+
+.restored {
+  background: var(--color-bg);
+  color: var(--color-success-text);
+}
+
+.toast {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-12);
+  min-height: 40px;
+  padding: var(--space-8) var(--space-8) var(--space-8) var(--space-16);
+  border-radius: var(--radius-input);
+  background: var(--color-text);
+  color: var(--color-bg);
+  box-shadow: var(--shadow-pop);
+  @include type(body);
+}
+
+// На инвертированном фоне цвет ошибки не читается ни в одной теме — иконка в цвет текста.
+.toastError {
+  width: var(--size-icon);
+  height: var(--size-icon);
+  flex: none;
+}
+
+.toastAction {
+  height: var(--size-control-xs);
+  padding: 0 var(--space-8);
+  border: 0;
+  border-radius: var(--radius-chip);
+  background: transparent;
+  color: var(--color-bg);
+  text-decoration: underline;
+  cursor: pointer;
+  @include type(name);
+}

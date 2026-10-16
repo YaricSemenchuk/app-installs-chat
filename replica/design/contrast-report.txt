@@ -1,0 +1,102 @@
+== tokens.json
+  AAA   16.29:1  text                     on bg                   
+  AAA   15.11:1  text                     on surface              
+  AAA   14.06:1  text                     on surface-hover        
+  AAA   13.25:1  text                     on accent-soft          
+  AAA   15.11:1  text                     on highlight            
+  AAA   16.29:1  text                     on raised               
+  AAA   11.18:1  text-secondary           on bg                   
+  AAA   10.37:1  text-secondary           on surface              
+  AAA    9.65:1  text-secondary           on surface-hover        
+  AAA    9.09:1  text-secondary           on accent-soft          
+  AA     5.70:1  text-muted               on bg                   
+  AA     5.29:1  text-muted               on surface              
+  AA     4.92:1  text-muted               on surface-hover        
+  AA     4.64:1  text-muted               on accent-soft          
+  AA     5.29:1  text-muted               on highlight            
+  AA     5.70:1  text-muted               on raised               
+  AA     6.22:1  link                     on bg                   
+  AA     5.37:1  link                     on surface-hover        
+  AA     5.77:1  link                     on highlight            
+  AA     5.06:1  mention-text             on mention-bg           
+  AAA   14.54:1  mention-me-text          on mention-me-bg        
+  AA     5.33:1  code-text                on code-bg              
+  AA     4.75:1  tooltip-text             on tooltip-bg           
+  AA     4.75:1  on-accent                on accent               
+  AA     5.76:1  on-accent                on accent-hover         
+  AA     4.83:1  on-danger                on danger               
+  AA     5.75:1  on-danger                on danger-hover         
+  AA     5.75:1  danger-text              on bg                   
+  AA     5.75:1  danger-text              on raised               
+  AA     4.96:1  danger-text              on surface-hover        
+  AA     5.69:1  success-text             on bg                   
+  PASS   3.78:1  border-input             on bg                   ui
+  PASS   3.50:1  border-input             on surface              ui
+  PASS   3.26:1  border-input             on surface-hover        ui
+  PASS   4.75:1  focus-ring               on bg                   ui
+  PASS   4.40:1  focus-ring               on surface              ui
+  PASS   4.40:1  accent                   on surface              ui
+  PASS   3.81:1  presence-active          on bg                   ui
+  PASS   3.53:1  presence-active          on surface              ui
+  PASS   3.78:1  presence-away            on bg                   ui
+  PASS   3.50:1  presence-away            on surface              ui
+  AA     6.82:1  on-avatar                on avatar-1             
+  AA     5.62:1  on-avatar                on avatar-2             
+  AAA    8.05:1  on-avatar                on avatar-3             
+  AA     6.03:1  on-avatar                on avatar-4             
+  AA     5.81:1  on-avatar                on avatar-5             
+  AAA    7.87:1  on-avatar                on avatar-6             
+
+  47 pairs, 0 failing AA
+
+== tokens.dark.json
+  AAA   15.95:1  text                     on bg                   
+  AAA   18.36:1  text                     on surface              
+  AAA   14.17:1  text                     on surface-hover        
+  AAA   12.90:1  text                     on accent-soft          
+  AAA   14.01:1  text                     on highlight            
+  AAA   14.90:1  text                     on raised               
+  AAA   14.35:1  text-secondary           on bg                   
+  AAA   16.51:1  text-secondary           on surface              
+  AAA   12.74:1  text-secondary           on surface-hover        
+  AAA   11.60:1  text-secondary           on accent-soft          
+  AA     6.00:1  text-muted               on bg                   
+  AA     6.90:1  text-muted               on surface              
+  AA     5.32:1  text-muted               on surface-hover        
+  AA     4.85:1  text-muted               on accent-soft          
+  AA     5.26:1  text-muted               on highlight            
+  AA     5.60:1  text-muted               on raised               
+  AA     6.45:1  link                     on bg                   
+  AA     5.72:1  link                     on surface-hover        
+  AA     5.66:1  link                     on highlight            
+  AA     6.82:1  mention-text             on mention-bg           
+  AAA   11.82:1  mention-me-text          on mention-me-bg        
+  AA     6.02:1  code-text                on code-bg              
+  AA     4.75:1  tooltip-text             on tooltip-bg           
+  AA     4.75:1  on-accent                on accent               
+  AA     5.76:1  on-accent                on accent-hover         
+  AA     4.83:1  on-danger                on danger               
+  AA     5.75:1  on-danger                on danger-hover         
+  AA     6.17:1  danger-text              on bg                   
+  AA     5.76:1  danger-text              on raised               
+  AA     5.48:1  danger-text              on surface-hover        
+  AAA    8.30:1  success-text             on bg                   
+  PASS   3.98:1  border-input             on bg                   ui
+  PASS   4.58:1  border-input             on surface              ui
+  PASS   3.54:1  border-input             on surface-hover        ui
+  PASS   4.54:1  focus-ring               on bg                   ui
+  PASS   5.22:1  focus-ring               on surface              ui
+  PASS   4.17:1  accent                   on surface              ui
+  PASS   8.30:1  presence-active          on bg                   ui
+  PASS   9.55:1  presence-active          on surface              ui
+  PASS   3.98:1  presence-away            on bg                   ui
+  PASS   4.58:1  presence-away            on surface              ui
+  AA     6.82:1  on-avatar                on avatar-1             
+  AA     5.62:1  on-avatar                on avatar-2             
+  AAA    8.05:1  on-avatar                on avatar-3             
+  AA     6.03:1  on-avatar                on avatar-4             
+  AA     5.81:1  on-avatar                on avatar-5             
+  AAA    7.87:1  on-avatar                on avatar-6             
+
+  47 pairs, 0 failing AA
+

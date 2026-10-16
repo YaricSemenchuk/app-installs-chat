@@ -1,0 +1,55 @@
+import { useId, type InputHTMLAttributes, type ReactNode } from "react";
+import { cx } from "../lib/cx";
+import s from "./TextField.module.scss";
+
+type Props = Omit<InputHTMLAttributes<HTMLInputElement>, "size" | "prefix"> & {
+  label: string;
+  hideLabel?: boolean;
+  hint?: ReactNode;
+  error?: ReactNode;
+  icon?: ReactNode;
+  prefix?: ReactNode;
+  size?: "s" | "m";
+};
+
+export function TextField({
+  label,
+  hideLabel = false,
+  hint,
+  error,
+  icon,
+  prefix,
+  size = "m",
+  className,
+  id,
+  ...rest
+}: Props) {
+  const autoId = useId();
+  const inputId = id ?? autoId;
+  const noteId = `${inputId}-note`;
+  const note = error ?? hint;
+
+  return (
+    <div className={cx(s.field, className)}>
+      <label htmlFor={inputId} className={hideLabel ? s.hidden : s.label}>
+        {label}
+      </label>
+      <div className={cx(s.control, s[size], error ? s.invalid : undefined, rest.disabled && s.disabled)}>
+        {icon && <span className={s.icon}>{icon}</span>}
+        {prefix && <span className={s.prefix}>{prefix}</span>}
+        <input
+          id={inputId}
+          className={s.input}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={note ? noteId : undefined}
+          {...rest}
+        />
+      </div>
+      {note && (
+        <p id={noteId} className={error ? s.error : s.hint}>
+          {note}
+        </p>
+      )}
+    </div>
+  );
+}

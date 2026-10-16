@@ -1,0 +1,122 @@
+@use "../styles/mixins" as *;
+
+.avatar {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  --presence-ring: var(--color-bg);
+}
+
+.image,
+.initials {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-avatar);
+}
+
+.image {
+  object-fit: cover;
+}
+
+.initials {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-on-avatar);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.xs {
+  width: var(--size-avatar-xs);
+  height: var(--size-avatar-xs);
+  font-size: 9px;
+}
+
+.s {
+  width: var(--size-avatar-s);
+  height: var(--size-avatar-s);
+  font-size: 9px;
+}
+
+.m {
+  width: var(--size-avatar-m);
+  height: var(--size-avatar-m);
+  font-size: 10px;
+}
+
+.l {
+  width: var(--size-avatar-l);
+  height: var(--size-avatar-l);
+  font-size: var(--type-caption-size);
+}
+
+.xl {
+  width: var(--size-avatar-xl);
+  height: var(--size-avatar-xl);
+  font-size: var(--type-heading-l-size);
+}
+
+.deactivated {
+  filter: grayscale(1);
+  opacity: 0.6;
+}
+
+.presence {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--presence-ring);
+  border-radius: var(--radius-pill);
+  box-sizing: content-box;
+
+  .xl & {
+    width: 14px;
+    height: 14px;
+    right: 2px;
+    bottom: 2px;
+  }
+
+  .s &,
+  .m & {
+    width: 8px;
+    height: 8px;
+  }
+
+  svg {
+    width: 8px;
+    height: 8px;
+  }
+}
+
+.active {
+  background: var(--color-presence-active);
+}
+
+.away {
+  background: var(--presence-ring);
+  box-shadow: inset 0 0 0 2px var(--color-presence-away);
+}
+
+.dnd {
+  background: var(--presence-ring);
+  color: var(--color-text-muted);
+}
+
+.stack {
+  display: inline-flex;
+
+  > * + * {
+    margin-left: -6px;
+  }
+
+  > * {
+    border-radius: var(--radius-avatar);
+    box-shadow: 0 0 0 2px var(--color-bg);
+  }
+}

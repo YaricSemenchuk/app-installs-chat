@@ -1,0 +1,80 @@
+@use "../styles/mixins" as *;
+
+// В Electron фон — область перетаскивания окна, контролы — нет.
+.titlebar {
+  display: grid;
+  grid-template-columns: 1fr minmax(240px, 640px) 1fr;
+  align-items: center;
+  gap: var(--space-16);
+  height: var(--layout-titlebar);
+  padding: 0 var(--space-12);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  -webkit-app-region: drag;
+  --presence-ring: var(--color-surface);
+
+  button {
+    -webkit-app-region: no-drag;
+  }
+}
+
+.nav {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  height: var(--size-control-xs);
+  padding: 0 var(--space-4) 0 var(--space-12);
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-chip);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  cursor: text;
+  @include type(body-read);
+
+  &:hover {
+    border-color: var(--color-text-muted);
+  }
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.placeholder {
+  flex: 1;
+  text-align: left;
+}
+
+.end {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-8);
+}
+
+.activity {
+  position: relative;
+  display: inline-flex;
+}
+
+.activityBadge {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  pointer-events: none;
+}
+
+.me {
+  display: inline-flex;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  cursor: pointer;
+}

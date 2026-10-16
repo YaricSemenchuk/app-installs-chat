@@ -1,0 +1,56 @@
+@use "../styles/mixins" as *;
+
+.button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--radius-chip);
+  cursor: pointer;
+  @include transition(background-color, color);
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  svg {
+    width: var(--size-icon);
+    height: var(--size-icon);
+  }
+}
+
+.xs {
+  width: var(--size-control-xs);
+  height: var(--size-control-xs);
+}
+
+.s {
+  width: var(--size-control-s);
+  height: var(--size-control-s);
+}
+
+.ghost {
+  background: transparent;
+  color: var(--color-text-secondary);
+
+  &:hover:not(:disabled) {
+    background: var(--color-surface-hover);
+    color: var(--color-text);
+  }
+
+  &[aria-pressed="true"] {
+    background: var(--color-accent-soft);
+    color: var(--color-link);
+  }
+}
+
+.primary {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+
+  &:hover:not(:disabled) {
+    background: var(--color-accent-hover);
+  }
+}

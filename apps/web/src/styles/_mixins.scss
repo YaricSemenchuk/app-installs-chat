@@ -1,0 +1,36 @@
+// Типографика и общие приёмы. Значения — только из tokens.css.
+
+@mixin type($role) {
+  font-size: var(--type-#{$role}-size);
+  line-height: var(--type-#{$role}-line);
+  font-weight: var(--type-#{$role}-weight);
+}
+
+@mixin focus-ring {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+@mixin transition($props...) {
+  transition-property: $props;
+  transition-duration: var(--motion-fast);
+  transition-timing-function: var(--motion-ease);
+}
+
+@mixin visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@mixin truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

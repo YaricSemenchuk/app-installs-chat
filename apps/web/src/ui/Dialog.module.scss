@@ -1,0 +1,83 @@
+@use "../styles/mixins" as *;
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--color-overlay);
+  opacity: 0.4;
+  z-index: 40;
+}
+
+.surface {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  width: 100%;
+  max-height: 85vh;
+  padding: var(--space-24);
+  border-radius: var(--radius-card);
+  background: var(--color-raised);
+  box-shadow: var(--shadow-modal);
+  overflow: auto;
+}
+
+.floating {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: calc(100% - 32px);
+  transform: translate(-50%, -50%);
+  z-index: 41;
+  animation: appear var(--motion-base) var(--motion-ease);
+}
+
+.s {
+  max-width: var(--layout-modal-s);
+}
+
+.m {
+  max-width: var(--layout-modal-m);
+}
+
+.l {
+  max-width: var(--layout-modal-l);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
+  margin: calc(var(--space-4) * -1) calc(var(--space-8) * -1) 0 0;
+}
+
+.title {
+  margin: 0;
+  color: var(--color-text);
+  @include type(heading-s);
+}
+
+.description {
+  margin: 0;
+  color: var(--color-text-secondary);
+  @include type(body-read);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-8);
+}
+
+@keyframes appear {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 8px));
+  }
+}

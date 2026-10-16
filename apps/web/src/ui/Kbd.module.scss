@@ -1,0 +1,21 @@
+@use "../styles/mixins" as *;
+
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 4px;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-family: var(--font-sans);
+  @include type(label);
+}
+
+.inverse {
+  border-color: rgb(255 255 255 / 0.45);
+  background: transparent;
+  color: var(--color-tooltip-text);
+}

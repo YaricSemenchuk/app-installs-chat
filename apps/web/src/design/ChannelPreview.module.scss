@@ -1,0 +1,88 @@
+@use "../styles/mixins" as *;
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--color-bg);
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.navList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.conversation {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--color-bg);
+}
+
+.feed {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-8) 0 var(--space-16);
+}
+
+.thread {
+  display: flex;
+  flex-direction: column;
+  width: var(--layout-thread-panel-default);
+  min-width: var(--layout-thread-panel-min);
+  border-left: 1px solid var(--color-border);
+  background: var(--color-bg);
+
+  @media (max-width: 1279px) {
+    display: none;
+  }
+}
+
+.threadHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--layout-header);
+  padding: 0 var(--space-12) 0 var(--space-20);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.threadTitle {
+  color: var(--color-text);
+  @include type(title);
+}
+
+.threadChannel {
+  color: var(--color-text-muted);
+  @include type(caption);
+}
+
+.threadFeed {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-8) 0;
+}
+
+.replyCount {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin: var(--space-4) var(--layout-message-gutter);
+  color: var(--color-text-muted);
+  @include type(label);
+
+  &::after {
+    content: "";
+    flex: 1;
+    border-top: 1px solid var(--color-border);
+  }
+}
