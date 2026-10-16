@@ -45,6 +45,41 @@
   color: var(--color-text-muted);
 }
 
+.textarea {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  resize: none;
+  font-family: inherit;
+
+  &::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  &:focus-visible {
+    outline: none;
+  }
+}
+
+.disabled {
+  background: var(--color-surface);
+}
+
+.hint,
+.counterError {
+  padding-left: var(--space-8);
+  @include type(caption);
+}
+
+.hint {
+  color: var(--color-text-muted);
+}
+
+.counterError {
+  color: var(--color-danger-text);
+}
+
 .bottom {
   display: flex;
   align-items: center;

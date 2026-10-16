@@ -27,6 +27,9 @@ type Props = {
   edited?: boolean;
   reactions?: Reaction[];
   thread?: { names: string[]; count: number; last: string; unread?: boolean };
+  fullTime?: string;
+  onRetry?: () => void;
+  onDiscard?: () => void;
   children: ReactNode;
 };
 
@@ -41,6 +44,9 @@ export function Message({
   edited = false,
   reactions,
   thread,
+  fullTime,
+  onRetry,
+  onDiscard,
   children,
 }: Props) {
   return (
@@ -52,7 +58,7 @@ export function Message({
     >
       <div className={s.gutter}>
         {continuation ? (
-          <time className={s.gutterTime} dateTime={isoTime}>
+          <time className={s.gutterTime} dateTime={isoTime} title={fullTime}>
             {time}
           </time>
         ) : (
@@ -68,7 +74,7 @@ export function Message({
                 {status}
               </span>
             )}
-            <time className={s.time} dateTime={isoTime}>
+            <time className={s.time} dateTime={isoTime} title={fullTime}>
               {time}
             </time>
           </div>
@@ -80,7 +86,14 @@ export function Message({
         {state === "sending" && <p className={s.note}>Отправляется…</p>}
         {state === "failed" && (
           <p className={cx(s.note, s.failedNote)}>
-            Не отправлено · <button type="button">Повторить</button> · <button type="button">Удалить</button>
+            Не отправлено ·{" "}
+            <button type="button" onClick={onRetry}>
+              Повторить
+            </button>{" "}
+            ·{" "}
+            <button type="button" onClick={onDiscard}>
+              Удалить
+            </button>
           </p>
         )}
         {reactions && reactions.length > 0 && (

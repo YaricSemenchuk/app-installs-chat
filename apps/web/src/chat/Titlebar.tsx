@@ -1,18 +1,21 @@
-import { ArrowLeft, ArrowRight, Bell, Search } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bell, LogOut, Search } from "lucide-react";
 import { Avatar } from "../ui/Avatar";
 import { Badge } from "../ui/Feedback";
 import { IconButton } from "../ui/IconButton";
 import { Kbd } from "../ui/Kbd";
+import { Menu } from "../ui/Menu";
 import s from "./Titlebar.module.scss";
 
-export function Titlebar({ me, activity }: { me: string; activity: number }) {
+type Props = { me: string; activity: number; onSignOut?: () => void };
+
+export function Titlebar({ me, activity, onSignOut }: Props) {
   return (
     <header className={s.titlebar}>
       <div className={s.nav}>
-        <IconButton label="Назад" shortcut="⌘[" size="xs">
+        <IconButton label="Назад" shortcut="⌘[" size="xs" onClick={() => history.back()}>
           <ArrowLeft />
         </IconButton>
-        <IconButton label="Вперёд" shortcut="⌘]" size="xs">
+        <IconButton label="Вперёд" shortcut="⌘]" size="xs" onClick={() => history.forward()}>
           <ArrowRight />
         </IconButton>
       </div>
@@ -32,9 +35,14 @@ export function Titlebar({ me, activity }: { me: string; activity: number }) {
             </span>
           )}
         </span>
-        <button type="button" className={s.me} aria-label="Профиль и настройки">
-          <Avatar name={me} size="m" presence="active" decorative />
-        </button>
+        <Menu
+          trigger={
+            <button type="button" className={s.me} aria-label={`${me}: профиль и настройки`}>
+              <Avatar name={me} size="m" presence="active" decorative />
+            </button>
+          }
+          items={[{ kind: "item", label: "Выйти", icon: <LogOut />, onSelect: onSignOut, disabled: !onSignOut }]}
+        />
       </div>
     </header>
   );

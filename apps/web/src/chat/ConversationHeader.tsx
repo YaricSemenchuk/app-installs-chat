@@ -2,7 +2,7 @@ import { useState } from "react";
 import { BellRing, Hash, Info, Link2, Pin } from "lucide-react";
 import { AvatarStack } from "../ui/Avatar";
 import { IconButton } from "../ui/IconButton";
-import { Tabs } from "../ui/Tabs";
+import { Tabs, type TabItem } from "../ui/Tabs";
 import s from "./ConversationHeader.module.scss";
 
 export function ConversationHeader({
@@ -15,10 +15,14 @@ export function ConversationHeader({
   name: string;
   topic: string;
   members: string[];
-  pins: number;
-  bookmark: string;
+  pins?: number;
+  bookmark?: string;
 }) {
   const [tab, setTab] = useState("messages");
+  const tabs: TabItem[] = [{ value: "messages", label: "Сообщения" }];
+  if (pins) tabs.push({ value: "pins", label: "Закреплённое", icon: <Pin />, count: pins });
+  if (bookmark) tabs.push({ value: "bookmark", label: bookmark, icon: <Link2 /> });
+
   return (
     <header className={s.header}>
       <div className={s.top}>
@@ -42,16 +46,7 @@ export function ConversationHeader({
           </IconButton>
         </div>
       </div>
-      <Tabs
-        label="Разделы канала"
-        value={tab}
-        onValueChange={setTab}
-        items={[
-          { value: "messages", label: "Сообщения" },
-          { value: "pins", label: "Закреплённое", icon: <Pin />, count: pins },
-          { value: "bookmark", label: bookmark, icon: <Link2 /> },
-        ]}
-      />
+      {tabs.length > 1 && <Tabs label="Разделы канала" value={tab} onValueChange={setTab} items={tabs} />}
     </header>
   );
 }

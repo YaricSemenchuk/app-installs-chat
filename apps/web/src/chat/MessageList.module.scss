@@ -1,0 +1,46 @@
+@use "../styles/mixins" as *;
+
+.scroller {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-8) 0 var(--space-16);
+  overflow-anchor: none; // позицию при подгрузке держим сами, одинаково во всех браузерах
+}
+
+.center {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-24);
+}
+
+.error {
+  color: var(--color-danger-text);
+  @include type(body);
+}
+
+.loadingTop {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-8);
+  color: var(--color-text-muted);
+}
+
+.text {
+  white-space: pre-wrap;
+}
+
+.skeletonRow {
+  display: flex;
+  gap: var(--space-8);
+  padding: var(--space-8) var(--layout-message-gutter);
+}
+
+.skeletonLines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding-top: var(--space-4);
+}

@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { existsSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { NestFactory } from "@nestjs/core";
 import type { NestExpressApplication } from "@nestjs/platform-express";
@@ -36,8 +36,14 @@ async function main(): Promise<void> {
   if (isProd && existsSync(webDist)) {
     app.useStaticAssets(webDist, { index: false, maxAge: "1h" });
     const indexHtml = join(webDist, "index.html");
+    // Только настоящие переходы по страницам: браузер просит text/html, у пути нет расширения.
+    // Иначе healthcheck (Accept: */*) получил бы index.html и считал бы сервис живым даже без БД.
     app.use((req: Request, res: Response, next: NextFunction) => {
-      const isPage = req.method === "GET" && !req.path.startsWith("/api/") && !req.path.startsWith("/ws") && req.accepts("html");
+      const isPage =
+        req.method === "GET" &&
+        (req.headers.accept ?? "").includes("text/html") &&
+        !extname(req.path) &&
+        !/^\/(api|ws|healthz)(\/|$)/.test(req.path);
       if (isPage) res.sendFile(indexHtml);
       else next();
     });

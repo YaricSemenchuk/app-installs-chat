@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Link } from "react-router";
 import { ChevronDown, Hash, Lock, Pencil, Plus, Users } from "lucide-react";
 import { cx } from "../lib/cx";
 import { Avatar, type Presence } from "../ui/Avatar";
@@ -67,28 +68,17 @@ function label(entry: SidebarEntry): string {
   }
 }
 
-export function SidebarItem({ entry, state = {} }: { entry: SidebarEntry; state?: ItemState }) {
+export function SidebarItem({ entry, state = {}, to }: { entry: SidebarEntry; state?: ItemState; to?: string }) {
   const { unread, mentions, muted, selected, draft, hover } = state;
   const text = label(entry);
   const aria = [text, mentions ? `${mentions} упоминания` : unread ? "есть непрочитанное" : ""]
     .filter(Boolean)
     .join(", ");
+  const className = cx(s.item, unread && !muted && s.unread, muted && s.muted, selected && s.selected, hover && s.hover);
+  const linkProps = { className, "aria-current": selected ? ("page" as const) : undefined, "aria-label": aria };
 
-  return (
-    <li>
-      <a
-        href="#"
-        className={cx(
-          s.item,
-          unread && !muted && s.unread,
-          muted && s.muted,
-          selected && s.selected,
-          hover && s.hover,
-        )}
-        aria-current={selected ? "page" : undefined}
-        aria-label={aria}
-        onClick={(e) => e.preventDefault()}
-      >
+  const content = (
+    <>
         <span className={s.lead}>
           {entry.kind === "channel" && (entry.private ? <Lock /> : <Hash />)}
           {entry.kind === "dm" && <Avatar name={entry.name} size="s" presence={entry.presence} decorative />}
@@ -105,7 +95,20 @@ export function SidebarItem({ entry, state = {} }: { entry: SidebarEntry; state?
         </span>
         {draft && !mentions && <Pencil className={s.draft} aria-label="Черновик" />}
         {mentions ? <Badge count={mentions} /> : null}
-      </a>
+    </>
+  );
+
+  return (
+    <li>
+      {to ? (
+        <Link to={to} {...linkProps}>
+          {content}
+        </Link>
+      ) : (
+        <a href="#" {...linkProps} onClick={(e) => e.preventDefault()}>
+          {content}
+        </a>
+      )}
     </li>
   );
 }

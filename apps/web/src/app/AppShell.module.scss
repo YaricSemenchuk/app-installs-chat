@@ -1,0 +1,58 @@
+@use "../styles/mixins" as *;
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--color-bg);
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.navList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--color-bg);
+}
+
+.fatal {
+  padding: var(--space-24);
+  color: var(--color-danger-text);
+  @include type(body);
+
+  button {
+    border: 0;
+    background: none;
+    color: var(--color-link);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+}
+
+.skeletonBar {
+  height: var(--layout-titlebar);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.skeletonSidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  width: var(--layout-sidebar-default);
+  padding: var(--space-24) var(--space-16);
+  border-right: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
