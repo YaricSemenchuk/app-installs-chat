@@ -2,9 +2,11 @@
 // сервер досылает пропущенное. События применяются идемпотентно, повтор не вредит.
 import { io, type Socket } from "socket.io-client";
 import { create } from "zustand";
-import { SOCKET_PATH, type BootDto, type EventDto } from "@teamchat/shared";
+import { SOCKET_PATH, type BootDto, type EventDto, type PresenceEventDto } from "@teamchat/shared";
 import { api } from "../api/http";
-import { bootKey, getBoot, queryClient, updateConversation, upsertUser } from "../data/boot";
+import { adminUsersKey, bootKey, getBoot, queryClient, updateBoot, updateConversation, upsertUser } from "../data/boot";
+
+const ACTIVE_EVERY_MS = 60_000;
 import { useMessages } from "../data/messages";
 
 export type ConnectionStatus = "connecting" | "online" | "reconnecting" | "offline" | "restored";
@@ -55,8 +57,17 @@ function apply(ev: EventDto) {
       break;
     }
     case "user.created":
+    case "user.updated":
       upsertUser(ev.payload);
+      if (ev.payload.id === me) updateBoot((b) => ({ ...b, me: ev.payload }));
+      void queryClient.invalidateQueries({ queryKey: adminUsersKey });
       break;
+    case "member.left": {
+      const { conversationId, userId } = ev.payload;
+      if (userId === me) updateBoot((b) => ({ ...b, conversations: b.conversations.filter((c) => c.id !== conversationId) }));
+      else updateConversation(conversationId, (c) => ({ ...c, memberIds: c.memberIds.filter((id) => id !== userId) }));
+      break;
+    }
     case "member.joined": {
       const { conversationId, userId } = ev.payload;
       const known = getBoot()?.conversations.some((c) => c.id === conversationId);
@@ -94,6 +105,14 @@ export function startRealtime(initialEventId: number, onUnauthorized: () => void
     wasOnline = true;
   });
   socket.on("resync", () => void resync().then(() => socket?.emit("hello", { lastEventId: watermark })));
+  socket.on("presence", ({ userId, presence }: PresenceEventDto) => {
+    updateBoot((b) => {
+      const next = { ...b.presence };
+      if (presence === "active") next[userId] = "active";
+      else delete next[userId];
+      return { ...b, presence: next };
+    });
+  });
   socket.on("unauthorized", onUnauthorized);
   socket.on("disconnect", (reason) => {
     if (reason === "io server disconnect") {
@@ -113,12 +132,23 @@ export function startRealtime(initialEventId: number, onUnauthorized: () => void
   window.addEventListener("offline", offline);
   window.addEventListener("online", online);
 
+  // «Человек здесь»: любое действие в окне, но не чаще раза в минуту — сервер держит «в сети».
+  let lastActive = 0;
+  const activity = () => {
+    if (!socket?.connected || !document.hasFocus() || Date.now() - lastActive < ACTIVE_EVERY_MS) return;
+    lastActive = Date.now();
+    socket.emit("active");
+  };
+  const activityEvents = ["pointerdown", "keydown", "focus", "pointermove"] as const;
+  activityEvents.forEach((e) => window.addEventListener(e, activity, { passive: true }));
+
   // Для ручной проверки обрыва в разработке: window.__chatSocket.disconnect() / .connect()
   if (import.meta.env.DEV) (window as unknown as { __chatSocket?: Socket }).__chatSocket = socket;
 
   return () => {
     window.removeEventListener("offline", offline);
     window.removeEventListener("online", online);
+    activityEvents.forEach((e) => window.removeEventListener(e, activity));
     stopRealtime();
   };
 }

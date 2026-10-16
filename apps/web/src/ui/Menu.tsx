@@ -8,12 +8,12 @@ export type MenuEntry =
   | { kind: "item"; label: string; icon?: ReactNode; kbd?: string; danger?: boolean; disabled?: boolean; onSelect?: () => void }
   | { kind: "separator" };
 
-export function Menu({ trigger, items }: { trigger: ReactElement; items: MenuEntry[] }) {
+export function Menu({ trigger, items, align = "end" }: { trigger: ReactElement; items: MenuEntry[]; align?: "start" | "end" }) {
   return (
     <D.Root>
       <D.Trigger asChild>{trigger}</D.Trigger>
       <D.Portal>
-        <D.Content className={s.surface} sideOffset={4} align="end">
+        <D.Content className={s.surface} sideOffset={4} align={align}>
           {items.map((it, i) =>
             it.kind === "separator" ? (
               <D.Separator key={i} className={s.separator} />

@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import type { ButtonHTMLAttributes, MouseEvent, ReactNode } from "react";
 import { cx } from "../lib/cx";
 import { Spinner } from "./Spinner";
 import s from "./Button.module.scss";
@@ -12,6 +12,8 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
   loading?: boolean;
 };
 
+// Во время загрузки кнопку не делаем disabled: браузер снял бы с неё фокус в никуда (body),
+// а скринридер потерял бы место. Вместо этого aria-disabled и глушим клик (в том числе submit формы).
 export function Button({
   variant = "primary",
   size = "m",
@@ -20,14 +22,24 @@ export function Button({
   disabled,
   className,
   children,
+  onClick,
   ...rest
 }: Props) {
+  function click(e: MouseEvent<HTMLButtonElement>) {
+    if (loading) {
+      e.preventDefault();
+      return;
+    }
+    onClick?.(e);
+  }
   return (
     <button
       type="button"
       className={cx(s.button, s[size], s[variant], className)}
-      disabled={disabled || loading}
+      disabled={disabled}
+      aria-disabled={loading || undefined}
       aria-busy={loading || undefined}
+      onClick={click}
       {...rest}
     >
       {loading ? <Spinner size={16} /> : icon}

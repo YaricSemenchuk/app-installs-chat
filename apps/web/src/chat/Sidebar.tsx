@@ -5,6 +5,7 @@ import { cx } from "../lib/cx";
 import { Avatar, type Presence } from "../ui/Avatar";
 import { Badge } from "../ui/Feedback";
 import { IconButton } from "../ui/IconButton";
+import { Menu, type MenuEntry } from "../ui/Menu";
 import s from "./Sidebar.module.scss";
 
 export type SidebarEntry =
@@ -22,14 +23,17 @@ export type ItemState = {
   hover?: boolean;
 };
 
-export function Sidebar({ workspace, children }: { workspace: string; children: ReactNode }) {
+export function Sidebar({ workspace, menu, children }: { workspace: string; menu?: MenuEntry[]; children: ReactNode }) {
+  const button = (
+    <button type="button" className={s.workspaceButton} aria-label={`${workspace}: меню рабочего пространства`}>
+      {workspace}
+      <ChevronDown />
+    </button>
+  );
   return (
     <nav className={s.sidebar} aria-label="Разговоры">
       <header className={s.workspace}>
-        <button type="button" className={s.workspaceButton}>
-          {workspace}
-          <ChevronDown />
-        </button>
+        {menu ? <Menu trigger={button} items={menu} align="start" /> : button}
         <IconButton label="Новое сообщение" shortcut="⌘N" size="xs">
           <Pencil />
         </IconButton>

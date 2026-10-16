@@ -42,6 +42,9 @@ export const MarkReadInput = z.object({
 });
 export type MarkReadInput = z.infer<typeof MarkReadInput>;
 
+// Тот же валидатор, что и на сервере: клиент не должен пропускать то, что API отвергнет.
+export const isEmail = (v: string) => z.email().safeParse(v).success;
+
 export const INVITE_TTL_DAYS = 30;
 export const INVITE_LINK_MAX_USES = 400;
 export const INVITE_EMAILS_PER_REQUEST = 50;

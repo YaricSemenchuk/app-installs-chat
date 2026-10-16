@@ -1,0 +1,70 @@
+@use "../styles/mixins" as *;
+
+.fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.legend {
+  margin-bottom: var(--space-8);
+  padding: 0;
+  color: var(--color-text);
+  @include type(body);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-8);
+  cursor: pointer;
+
+  &[data-disabled] {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.radio {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  padding: 0;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg);
+  cursor: pointer;
+
+  &[data-state="checked"] {
+    border-color: var(--color-accent);
+  }
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  color: var(--color-text);
+  @include type(body-read);
+}
+
+.hint {
+  color: var(--color-text-muted);
+  @include type(caption);
+}

@@ -1,13 +1,13 @@
 feature,area,priority,original,clone,notes
 Вход по email с одноразовым кодом,auth,must,yes,yes,"M0: код в письме, HMAC-хэш, лимит 5 кодов / 15 мин, 5 попыток на код"
-Вход через Google,auth,could,yes,no,если компания на Google Workspace
+Вход через Google,auth,could,yes,yes,"M1: OAuth code + PKCE, подписанная state-cookie; включается GOOGLE_CLIENT_ID/SECRET"
 Несколько сессий и выход со всех устройств,auth,should,yes,partial,M0: много сессий и выход с текущего устройства; «выйти везде» — M1
-Приглашение по email (срок 30 дней),workspace,must,yes,no,S36 S02 F01 F03
-Ссылка-приглашение со сроком и лимитом использований,workspace,should,yes,no,у Slack 30 дней и до 400 использований
+Приглашение по email (срок 30 дней),workspace,must,yes,yes,"M1: одноразовое, повторное приглашение заменяет старое"
+Ссылка-приглашение со сроком и лимитом использований,workspace,should,yes,yes,"M1: только админы; срок до 30 дней, до 400 входов, отзыв"
 Запрос на приглашение с одобрением админом,workspace,could,yes,no,
-Профиль при первом входе: имя и аватар,workspace,must,yes,no,S02
-Роли owner / admin / member,admin,must,yes,partial,"M0: роли в БД, primary owner создаётся при старте; управление ролями — M1"
-Деактивация и реактивация участника,admin,must,yes,no,S37 F24; выход из всех сессий; сообщения остаются
+Профиль при первом входе: имя и аватар,workspace,must,yes,partial,"M1: имя, полное имя, должность, часовой пояс; аватар — с файлами в M4"
+Роли owner / admin / member,admin,must,yes,yes,"M1: менять можно только тех, кто ниже по рангу"
+Деактивация и реактивация участника,admin,must,yes,yes,"M1: сессии и сокеты закрываются сразу, выход из каналов; возврат — в #general и каналы по умолчанию"
 Каналы по умолчанию для новичков,admin,should,yes,no,только публичные; #general всегда
 Политики: кто создаёт и кто архивирует каналы,admin,should,yes,no,S38
 Окно редактирования сообщений: всегда / никогда / N минут,admin,could,yes,no,
@@ -91,10 +91,10 @@ feature,area,priority,original,clone,notes
 Ключевые слова для уведомлений,notifications,could,yes,no,
 Звук и превью текста в уведомлении,notifications,could,yes,no,
 Браузерный push при закрытой вкладке,notifications,could,yes,no,web push через service worker
-Присутствие active / away с авто-away через 10 минут,presence,must,yes,no,по подписке
+Присутствие active / away с авто-away через 10 минут,presence,must,yes,yes,"M1: в памяти сервера, сигнал active от клиента раз в минуту"
 Ручной режим away,presence,could,yes,no,
 Статус: эмодзи + текст + срок,presence,should,yes,no,S32 F20; текст до 100 символов
-Профиль: имя / должность / часовой пояс / локальное время,presence,should,yes,no,S31
+Профиль: имя / должность / часовой пояс / локальное время,presence,should,yes,yes,"M1: карточка по клику на автора, правка в «Профиль»"
 Индикатор «печатает…»,realtime,should,yes,no,
 Новые сообщения появляются без перезагрузки,realtime,must,yes,yes,M0: socket.io
 Переподключение и догрузка пропущенного после обрыва,realtime,must,yes,yes,"M0: журнал events, hello{lastEventId}, баннер S43"

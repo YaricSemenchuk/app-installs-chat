@@ -440,3 +440,23 @@
     @include type(label);
   }
 }
+
+.authorButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.avatarButton {
+  display: inline-flex;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-avatar);
+  background: none;
+  cursor: pointer;
+}

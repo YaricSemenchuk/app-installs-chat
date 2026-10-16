@@ -1,4 +1,4 @@
-import { useId, type InputHTMLAttributes, type ReactNode } from "react";
+import { useId, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from "react";
 import { cx } from "../lib/cx";
 import s from "./TextField.module.scss";
 
@@ -40,6 +40,37 @@ export function TextField({
         <input
           id={inputId}
           className={s.input}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={note ? noteId : undefined}
+          {...rest}
+        />
+      </div>
+      {note && (
+        <p id={noteId} className={error ? s.error : s.hint}>
+          {note}
+        </p>
+      )}
+    </div>
+  );
+}
+
+type AreaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string; hint?: ReactNode; error?: ReactNode };
+
+export function TextArea({ label, hint, error, className, id, rows = 3, ...rest }: AreaProps) {
+  const autoId = useId();
+  const areaId = id ?? autoId;
+  const noteId = `${areaId}-note`;
+  const note = error ?? hint;
+  return (
+    <div className={cx(s.field, className)}>
+      <label htmlFor={areaId} className={s.label}>
+        {label}
+      </label>
+      <div className={cx(s.control, s.area, error ? s.invalid : undefined)}>
+        <textarea
+          id={areaId}
+          rows={rows}
+          className={cx(s.input, s.areaInput)}
           aria-invalid={error ? true : undefined}
           aria-describedby={note ? noteId : undefined}
           {...rest}

@@ -9,6 +9,8 @@ export const queryClient = new QueryClient({
 });
 
 export const bootKey = ["boot"] as const;
+export const adminUsersKey = ["admin", "users"] as const;
+export const invitesKey = ["admin", "invites"] as const;
 
 export function useBoot() {
   return useQuery({ queryKey: bootKey, queryFn: () => api<BootDto>("/boot"), staleTime: Infinity });
@@ -35,5 +37,11 @@ export function upsertUser(user: UserDto): void {
 
 export function userName(boot: BootDto | undefined, id: string): string {
   const u = boot?.users.find((x) => x.id === id);
-  return u ? u.realName || u.displayName : "Неизвестный";
+  return u ? displayOf(u) : "Неизвестный";
 }
+
+// В ленте и сайдбаре — короткое имя, которое человек выбрал; полное — в карточке.
+export const displayOf = (u: UserDto) => u.displayName || u.realName;
+
+// presence может не прийти от старого API во время выкатки — не падаем.
+export const isOnline = (boot: BootDto | undefined, id: string) => boot?.presence?.[id] === "active";

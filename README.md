@@ -31,8 +31,20 @@ npm run dev
 
 ```bash
 npm run typecheck
-npm run test:e2e        # нужен запущенный API (npm run dev)
+npm run test:e2e
 ```
+
+e2e сами создают базу `teamchat_test` рядом с `DATABASE_URL` (пересоздают при каждом запуске), поднимают свой
+экземпляр API на порту 3201 и поддельный Google на 3299 — dev-сервер для них не нужен.
+
+### Вход через Google
+
+1. Google Cloud Console → APIs & Services → Credentials → OAuth client ID, тип «Web application».
+2. Authorized redirect URI: `{APP_URL}/api/auth/google/callback` (локально `http://localhost:5173/api/auth/google/callback`).
+3. `GOOGLE_CLIENT_ID` и `GOOGLE_CLIENT_SECRET` в `apps/api/.env` (или в переменных Railway). Без них кнопка не показывается.
+
+Войти через Google может тот, у кого уже есть аккаунт с этой почтой, кто пришёл по приглашению или чей домен
+в `ALLOWED_EMAIL_DOMAINS`.
 
 Схема БД меняется SQL-миграцией в `apps/api/prisma/migrations/<дата>_<имя>/migration.sql`, затем
 `npx prisma migrate deploy && npx prisma db pull && npx prisma generate` в `apps/api`.
@@ -56,5 +68,6 @@ npm run test:e2e        # нужен запущенный API (npm run dev)
 | `ALLOWED_EMAIL_DOMAINS` | домены, с которых можно войти без приглашения, через запятую |
 | `RESEND_API_KEY` | ключ Resend (обязателен в production) |
 | `EMAIL_FROM` | отправитель, домен подтверждён в Resend |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | необязательно: вход через Google |
 
 `PORT` Railway задаёт сам.

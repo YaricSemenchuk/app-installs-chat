@@ -150,7 +150,8 @@ Tables: 26 (`replica/schema.sql`, первая миграция; провере�
 | GET /auth/sessions | мои сессии | member | — | sessions[] | — |
 | DELETE /auth/sessions/:id | выйти на устройстве | member | — | 204 | — |
 | DELETE /auth/sessions | выйти везде, кроме текущего | member | — | 204 | — |
-| GET /invites/:token | превью инвайта: workspace, кто пригласил | anyone | — | invite preview | F01 |
+| GET /invites/preview/:token | превью инвайта: workspace, кто пригласил | anyone | — | invite preview | F01 |
+| GET /auth/providers | какие способы входа включены (Google) | anyone | — | { google } | F02 |
 | POST /me/onboarding | заполнить профиль при первом входе, вступить в каналы по умолчанию и из инвайта | member | displayName, realName, avatarFileId? | user | F01 |
 | GET /boot | старт приложения: я, настройки, все пользователи, мои разговоры со счётчиками непрочитанного и упоминаний, разделы, emoji, последний `events.id` | member | — | boot payload | все |
 | PATCH /me/profile | имя, должность, часовой пояс, аватар | member | fields | user | — |

@@ -3,7 +3,8 @@
 import { Fragment, useEffect, useLayoutEffect, useRef } from "react";
 import { LogIn } from "lucide-react";
 import type { BootDto } from "@teamchat/shared";
-import { userName } from "../data/boot";
+import { isOnline, userName } from "../data/boot";
+import { UserCard } from "../people/UserCard";
 import { useMessages, type ChatMessage } from "../data/messages";
 import { dayKey, dayLabel, formatFull, formatTime } from "../lib/format";
 import { linkify } from "../lib/linkify";
@@ -154,6 +155,7 @@ function Row({
   onDiscard: (conversationId: string, clientMsgId: string) => void;
 }) {
   const author = userName(boot, m.userId);
+  const user = boot.users.find((u) => u.id === m.userId);
   if (m.subtype === "join") {
     return <SystemMessage icon={<LogIn />}>{author} теперь в канале</SystemMessage>;
   }
@@ -167,6 +169,8 @@ function Row({
     <Message
       id={m.id}
       author={author}
+      authorId={m.userId}
+      authorCard={user ? <UserCard user={user} online={isOnline(boot, user.id)} /> : undefined}
       time={formatTime(m.createdAt)}
       fullTime={formatFull(m.createdAt)}
       isoTime={m.createdAt}

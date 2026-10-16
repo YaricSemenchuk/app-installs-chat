@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 import {
   Bookmark,
   Download,
@@ -11,6 +11,7 @@ import {
 import { cx } from "../lib/cx";
 import { Avatar } from "../ui/Avatar";
 import { IconButton } from "../ui/IconButton";
+import { Popover } from "../ui/Popover";
 import s from "./Message.module.scss";
 
 export type Reaction = { emoji: string; count: number; mine?: boolean; who: string };
@@ -30,6 +31,8 @@ type Props = {
   fullTime?: string;
   onRetry?: () => void;
   onDiscard?: () => void;
+  authorId?: string; // для цвета аватара: один человек — один цвет
+  authorCard?: ReactNode; // карточка по клику на имя или аватар
   children: ReactNode;
 };
 
@@ -47,8 +50,19 @@ export function Message({
   fullTime,
   onRetry,
   onDiscard,
+  authorId,
+  authorCard,
   children,
 }: Props) {
+  const avatar = <Avatar name={author} id={authorId} size="l" decorative />;
+  const withCard = (trigger: ReactElement) =>
+    authorCard ? (
+      <Popover trigger={trigger} label={`Профиль: ${author}`}>
+        {authorCard}
+      </Popover>
+    ) : (
+      trigger
+    );
   return (
     <article
       className={cx(s.message, continuation && s.continuation, s[state])}
@@ -61,14 +75,28 @@ export function Message({
           <time className={s.gutterTime} dateTime={isoTime} title={fullTime}>
             {time}
           </time>
+        ) : authorCard ? (
+          withCard(
+            <button type="button" className={s.avatarButton} aria-label={`Профиль: ${author}`}>
+              {avatar}
+            </button>,
+          )
         ) : (
-          <Avatar name={author} size="l" decorative />
+          avatar
         )}
       </div>
       <div className={s.main}>
         {!continuation && (
           <div className={s.meta}>
-            <span className={s.author}>{author}</span>
+            {authorCard ? (
+              withCard(
+                <button type="button" className={cx(s.author, s.authorButton)}>
+                  {author}
+                </button>,
+              )
+            ) : (
+              <span className={s.author}>{author}</span>
+            )}
             {status && (
               <span className={s.status} aria-label={`статус ${status}`}>
                 {status}

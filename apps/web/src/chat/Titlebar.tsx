@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Bell, LogOut, Search } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bell, LogOut, Search, UserRound } from "lucide-react";
 import { Avatar } from "../ui/Avatar";
 import { Badge } from "../ui/Feedback";
 import { IconButton } from "../ui/IconButton";
@@ -6,9 +6,9 @@ import { Kbd } from "../ui/Kbd";
 import { Menu } from "../ui/Menu";
 import s from "./Titlebar.module.scss";
 
-type Props = { me: string; activity: number; onSignOut?: () => void };
+type Props = { me: string; activity: number; onSignOut?: () => void; onProfile?: () => void };
 
-export function Titlebar({ me, activity, onSignOut }: Props) {
+export function Titlebar({ me, activity, onSignOut, onProfile }: Props) {
   return (
     <header className={s.titlebar}>
       <div className={s.nav}>
@@ -41,7 +41,10 @@ export function Titlebar({ me, activity, onSignOut }: Props) {
               <Avatar name={me} size="m" presence="active" decorative />
             </button>
           }
-          items={[{ kind: "item", label: "Выйти", icon: <LogOut />, onSelect: onSignOut, disabled: !onSignOut }]}
+          items={[
+            ...(onProfile ? [{ kind: "item" as const, label: "Профиль", icon: <UserRound />, onSelect: onProfile }, { kind: "separator" as const }] : []),
+            { kind: "item", label: "Выйти", icon: <LogOut />, onSelect: onSignOut, disabled: !onSignOut },
+          ]}
         />
       </div>
     </header>

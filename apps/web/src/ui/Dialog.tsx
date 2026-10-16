@@ -6,7 +6,9 @@ import { IconButton } from "./IconButton";
 import s from "./Dialog.module.scss";
 
 type Props = {
-  trigger: ReactElement;
+  trigger?: ReactElement; // без trigger — управляемая модалка через open/onOpenChange
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   title: string;
   description?: ReactNode;
   size?: "s" | "m" | "l";
@@ -14,13 +16,21 @@ type Props = {
   children?: ReactNode;
 };
 
-export function Dialog({ trigger, title, description, size = "s", footer, children }: Props) {
+export function Dialog({ trigger, open, onOpenChange, title, description, size = "s", footer, children }: Props) {
   return (
-    <D.Root>
-      <D.Trigger asChild>{trigger}</D.Trigger>
+    <D.Root open={open} onOpenChange={onOpenChange}>
+      {trigger && <D.Trigger asChild>{trigger}</D.Trigger>}
       <D.Portal>
         <D.Overlay className={s.overlay} />
-        <D.Content className={cx(s.surface, s.floating, s[size])}>
+        <D.Content
+          className={cx(s.surface, s.floating, s[size])}
+          // Фокус — на поле с autoFocus, иначе на саму модалку, а не на «Закрыть»: так не всплывает его подсказка.
+          onOpenAutoFocus={(e) => {
+            e.preventDefault();
+            const el = e.currentTarget as HTMLElement;
+            if (!el.contains(document.activeElement)) el.focus();
+          }}
+        >
           <header className={s.header}>
             <D.Title className={s.title}>{title}</D.Title>
             <D.Close asChild>
@@ -29,7 +39,11 @@ export function Dialog({ trigger, title, description, size = "s", footer, childr
               </IconButton>
             </D.Close>
           </header>
-          {description && <D.Description className={s.description}>{description}</D.Description>}
+          {description ? (
+            <D.Description className={s.description}>{description}</D.Description>
+          ) : (
+            <D.Description className={s.hidden}>{title}</D.Description>
+          )}
           {children && <div className={s.body}>{children}</div>}
           {footer && <footer className={s.footer}>{footer}</footer>}
         </D.Content>

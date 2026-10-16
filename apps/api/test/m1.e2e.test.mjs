@@ -234,3 +234,18 @@ describe("M1 Google sign-in", () => {
     assert.equal(res.status, 302);
   });
 });
+
+describe("Database time", () => {
+  test("timestamps written by the API match the database clock, whatever the server time zone", async () => {
+    const { default: pg } = await import("pg");
+    const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
+    await client.connect();
+    const before = Date.now();
+    await call(null, "POST", "/api/auth/email/start", { email: `tz.${run}@${DOMAIN}` });
+    const { rows } = await client.query("select created_at, now() as db_now from login_codes where email = $1", [`tz.${run}@${DOMAIN}`]);
+    await client.end();
+    const written = rows[0].created_at.getTime();
+    assert.ok(Math.abs(written - before) < 60_000, `created_at ${rows[0].created_at.toISOString()} vs now ${new Date(before).toISOString()}`);
+    assert.ok(Math.abs(rows[0].db_now.getTime() - written) < 60_000);
+  });
+});

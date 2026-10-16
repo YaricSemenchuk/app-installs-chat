@@ -3,8 +3,11 @@ import { Bookmark, FileStack, MessageSquareText, SearchX, SendHorizontal } from 
 import { DesignPage } from "../design/DesignPage";
 import { useBoot } from "../data/boot";
 import { ConversationPage } from "../pages/ConversationPage";
+import { InvitePage } from "../pages/InvitePage";
+import { OnboardingPage } from "../pages/OnboardingPage";
 import { SignInPage } from "../pages/SignInPage";
 import { StubPage } from "../pages/StubPage";
+import { PeoplePage } from "../people/PeoplePage";
 import { AppShell } from "./AppShell";
 
 function OpenDefaultConversation() {
@@ -17,6 +20,8 @@ const later = "Этот раздел появится в одном из сле�
 
 export const router = createBrowserRouter([
   { path: "/signin", element: <SignInPage /> },
+  { path: "/invite/:token", element: <InvitePage /> },
+  { path: "/welcome", element: <OnboardingPage /> },
   { path: "/design", element: <DesignPage /> },
   {
     path: "/",
@@ -24,6 +29,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <OpenDefaultConversation /> },
       { path: "c/:conversationId", element: <ConversationPage /> },
+      { path: "admin/people", element: <PeoplePage /> },
       { path: "threads", element: <StubPage icon={<MessageSquareText />} title="Треды" text={later} /> },
       { path: "drafts", element: <StubPage icon={<SendHorizontal />} title="Черновики и отправленные" text={later} /> },
       { path: "saved", element: <StubPage icon={<Bookmark />} title="Сохранённое" text={later} /> },

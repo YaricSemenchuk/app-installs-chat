@@ -63,6 +63,10 @@
   @include type(body-read);
 }
 
+.hidden {
+  @include visually-hidden;
+}
+
 .body {
   display: flex;
   flex-direction: column;

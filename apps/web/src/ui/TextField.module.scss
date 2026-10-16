@@ -94,3 +94,14 @@
   color: var(--color-danger-text);
   @include type(caption);
 }
+
+.area {
+  align-items: flex-start;
+  padding: var(--space-8) var(--space-12);
+}
+
+.areaInput {
+  height: auto;
+  resize: vertical;
+  font-family: inherit;
+}

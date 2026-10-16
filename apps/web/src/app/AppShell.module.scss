@@ -56,3 +56,31 @@
   border-right: 1px solid var(--color-border);
   background: var(--color-surface);
 }
+
+.inviteButton {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  width: 100%;
+  height: var(--size-sidebar-item);
+  margin-top: var(--space-16);
+  padding: 0 var(--space-8);
+  border: 0;
+  border-radius: var(--radius-chip);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  @include type(body-read);
+
+  &:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text);
+  }
+
+  svg {
+    width: var(--size-icon);
+    height: var(--size-icon);
+    margin: 0 2px;
+    color: var(--color-text-muted);
+  }
+}
