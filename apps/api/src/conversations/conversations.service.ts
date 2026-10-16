@@ -5,6 +5,7 @@ import { PrismaService } from "../db/prisma.service.js";
 import type { users } from "../generated/prisma/client.js";
 import { EventsService } from "../realtime/events.service.js";
 import { RealtimeHub } from "../realtime/hub.service.js";
+import { PresenceService } from "../realtime/presence.service.js";
 
 type UnreadRow = { conversation_id: string; last_read_seq: bigint; latest_seq: bigint; unread: bigint };
 
@@ -14,6 +15,7 @@ export class ConversationsService {
     private readonly prisma: PrismaService,
     private readonly events: EventsService,
     private readonly hub: RealtimeHub,
+    private readonly presence: PresenceService,
   ) {}
 
   async boot(me: users): Promise<BootDto> {
@@ -63,9 +65,10 @@ export class ConversationsService {
 
     return {
       me: toUserDto(me),
-      workspace: { name: ws.name },
+      workspace: { name: ws.name, whoCanInvite: ws.who_can_invite === "admins" ? "admins" : "everyone" },
       users: users.map(toUserDto),
       conversations,
+      presence: this.presence.snapshot(),
       lastEventId: Number(last),
     };
   }

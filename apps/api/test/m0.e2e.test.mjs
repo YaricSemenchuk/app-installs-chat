@@ -1,81 +1,8 @@
-// Сквозная проверка M0 против запущенного API (npm run dev или npm start).
-// Коды входа берутся из .dev-mail.log — его пишет MailService, когда RESEND_API_KEY не задан.
+// M0: вход по домену, сообщения в реальном времени, история, догрузка, курсор прочитанного, защита.
 import { randomUUID } from "node:crypto";
-import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
 import { after, before, describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { io } from "socket.io-client";
-
-const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000";
-const DOMAIN = process.env.E2E_EMAIL_DOMAIN ?? "promobile.test";
-const MAIL_LOG = resolve(process.cwd(), ".dev-mail.log");
-const run = Date.now().toString(36);
-const sockets = [];
-
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-async function lastMailTo(email, since) {
-  for (let i = 0; i < 40; i++) {
-    const lines = (await readFile(MAIL_LOG, "utf8").catch(() => "")).trim().split("\n").filter(Boolean);
-    const mail = lines.map((l) => JSON.parse(l)).reverse().find((m) => m.to === email && m.at >= since);
-    if (mail) return mail;
-    await sleep(100);
-  }
-  throw new Error(`no mail to ${email}`);
-}
-
-async function call(cookie, method, path, body) {
-  const res = await fetch(BASE + path, {
-    method,
-    headers: { ...(cookie ? { cookie } : {}), ...(body !== undefined ? { "content-type": "application/json" } : {}) },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
-  const text = await res.text();
-  return { status: res.status, body: text ? JSON.parse(text) : null, headers: res.headers };
-}
-
-async function login(email) {
-  const since = new Date().toISOString();
-  assert.equal((await call(null, "POST", "/api/auth/email/start", { email })).status, 204);
-  const mail = await lastMailTo(email, since);
-  const code = mail.subject.match(/(\d{6})/)?.[1];
-  assert.ok(code, `code in subject: ${mail.subject}`);
-  const res = await call(null, "POST", "/api/auth/email/verify", { email, code });
-  assert.equal(res.status, 201, JSON.stringify(res.body));
-  const sid = res.headers.get("set-cookie")?.match(/sid=([^;]+)/)?.[1];
-  assert.ok(sid, "session cookie");
-  return `sid=${sid}`;
-}
-
-function connect(cookie, lastEventId) {
-  const events = [];
-  const socket = io(BASE, { path: "/ws", transports: ["websocket"], extraHeaders: cookie ? { cookie } : {}, reconnection: false });
-  sockets.push(socket);
-  socket.on("events", (batch) => events.push(...batch));
-  const synced = new Promise((resolveSynced, reject) => {
-    socket.on("synced", resolveSynced);
-    socket.on("resync", () => reject(new Error("unexpected resync")));
-    socket.on("unauthorized", () => reject(new Error("unauthorized")));
-    socket.on("disconnect", (reason) => reject(new Error(`disconnected: ${reason}`)));
-    socket.on("connect_error", reject);
-  });
-  socket.on("connect", () => socket.emit("hello", { lastEventId }));
-  return { socket, events, synced };
-}
-
-async function waitFor(pred, ms = 3000) {
-  const until = Date.now() + ms;
-  while (Date.now() < until) {
-    const hit = pred();
-    if (hit) return hit;
-    await sleep(25);
-  }
-  throw new Error("timed out");
-}
-
-const send = (cookie, convId, text, clientMsgId = randomUUID()) =>
-  call(cookie, "POST", `/api/conversations/${convId}/messages`, { clientMsgId, text });
+import { BASE, DOMAIN, boot, call, closeSockets, connect, lastMailTo, login, run, send, sleep, waitFor } from "./helpers.mjs";
 
 describe("M0 vertical slice", () => {
   let anna, boris, general, annaBoot;
@@ -83,11 +10,11 @@ describe("M0 vertical slice", () => {
   before(async () => {
     anna = await login(`anna.${run}@${DOMAIN}`);
     boris = await login(`boris.${run}@${DOMAIN}`);
-    annaBoot = (await call(anna, "GET", "/api/boot")).body;
+    annaBoot = await boot(anna);
     general = annaBoot.conversations.find((c) => c.isGeneral);
   });
 
-  after(() => sockets.forEach((s) => s.disconnect()));
+  after(closeSockets);
 
   test("people from an allowed domain join and land in #general", () => {
     assert.ok(general, "#general in boot");
@@ -126,16 +53,16 @@ describe("M0 vertical slice", () => {
   });
 
   test("after a dropped connection the client catches up", async () => {
-    const boot = (await call(anna, "GET", "/api/boot")).body;
+    const before = await boot(anna);
     const missed = await send(boris, general.id, "пока тебя не было");
-    const back = connect(anna, boot.lastEventId);
+    const back = connect(anna, before.lastEventId);
     await back.synced;
     assert.ok(back.events.some((e) => e.kind === "message.created" && e.payload.id === missed.body.id));
     back.socket.disconnect();
   });
 
   test("read cursor clears unread and syncs to the reader's other devices", async () => {
-    const before = (await call(anna, "GET", "/api/boot")).body;
+    const before = await boot(anna);
     const conv = before.conversations.find((c) => c.id === general.id);
     assert.ok(conv.unreadCount > 0, "boris's messages are unread for anna");
 
@@ -145,7 +72,7 @@ describe("M0 vertical slice", () => {
     assert.equal(res.body.lastReadSeq, conv.latestSeq);
     await waitFor(() => other.events.find((e) => e.kind === "read.updated" && e.payload.lastReadSeq === conv.latestSeq));
 
-    const after = (await call(anna, "GET", "/api/boot")).body;
+    const after = await boot(anna);
     assert.equal(after.conversations.find((c) => c.id === general.id).unreadCount, 0);
     const back = await call(anna, "POST", `/api/conversations/${general.id}/read`, { seq: 1 });
     assert.equal(back.body.lastReadSeq, conv.latestSeq, "cursor never moves backwards");

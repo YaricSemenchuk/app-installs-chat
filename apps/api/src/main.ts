@@ -13,8 +13,12 @@ import { config, isProd } from "./config.js";
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
 // Изменяющие запросы принимаем только как JSON: обычная HTML-форма с чужого сайта так не отправит.
+// POST — всегда JSON (форма умеет только GET/POST); DELETE/PUT/PATCH без тела браузер кросс-сайтом
+// без CORS-preflight не отправит, им достаточно JSON, когда тело есть.
 function jsonOnlyMutations(req: Request, res: Response, next: NextFunction): void {
-  if (req.path.startsWith("/api/") && !SAFE_METHODS.has(req.method) && !req.is("application/json")) {
+  const hasBody = Number(req.headers["content-length"] ?? 0) > 0 || req.headers["transfer-encoding"] !== undefined;
+  const needsJson = req.method === "POST" || hasBody;
+  if (req.path.startsWith("/api/") && !SAFE_METHODS.has(req.method) && needsJson && !req.is("application/json")) {
     res.status(415).json({ statusCode: 415, message: "Нужен Content-Type: application/json" });
     return;
   }

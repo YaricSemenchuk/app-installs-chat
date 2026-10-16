@@ -3,6 +3,7 @@ import {
   ConnectedSocket,
   MessageBody,
   type OnGatewayConnection,
+  type OnGatewayDisconnect,
   type OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
@@ -15,6 +16,7 @@ import { toEventDto } from "../common/mappers.js";
 import { appOrigin } from "../config.js";
 import { PrismaService } from "../db/prisma.service.js";
 import { RealtimeHub, rooms } from "./hub.service.js";
+import { PresenceService } from "./presence.service.js";
 
 const CATCH_UP_LIMIT = 1000;
 
@@ -29,13 +31,14 @@ function readCookie(header: string | undefined, name: string): string | undefine
 }
 
 @WebSocketGateway({ path: SOCKET_PATH, serveClient: false })
-export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection {
+export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   private readonly log = new Logger("Realtime");
 
   constructor(
     private readonly hub: RealtimeHub,
     private readonly auth: AuthService,
     private readonly prisma: PrismaService,
+    private readonly presence: PresenceService,
   ) {}
 
   afterInit(server: Server): void {
@@ -75,7 +78,20 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection {
       rooms.session(session.sessionId),
       ...memberships.map((m) => rooms.conversation(m.conversation_id)),
     ]);
+    if (socket.connected) this.presence.connected(session.user.id, socket.id);
     return true;
+  }
+
+  handleDisconnect(socket: Socket): void {
+    const { userId } = socket.data as Partial<SocketData>;
+    if (userId) this.presence.disconnected(userId, socket.id);
+  }
+
+  // Клиент шлёт, пока человек что-то делает в окне (не чаще раза в минуту).
+  @SubscribeMessage("active")
+  async active(@ConnectedSocket() socket: Socket): Promise<void> {
+    const data = socket.data as SocketData;
+    if (await data.ready) this.presence.touch(data.userId);
   }
 
   // Догрузка: всё из журнала после lastEventId, что адресовано этому пользователю.

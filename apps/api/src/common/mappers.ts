@@ -1,6 +1,6 @@
 // Строки БД (snake_case, BigInt, Date) → DTO контракта из @teamchat/shared.
-import type { EventDto, MessageDto, Role, UserDto } from "@teamchat/shared";
-import type { events, messages, users } from "../generated/prisma/client.js";
+import type { AdminUserDto, EventDto, InviteDto, MessageDto, Role, UserDto } from "@teamchat/shared";
+import type { events, invites, messages, users } from "../generated/prisma/client.js";
 
 export function toUserDto(u: users): UserDto {
   return {
@@ -9,11 +9,31 @@ export function toUserDto(u: users): UserDto {
     displayName: u.display_name,
     realName: u.real_name,
     title: u.title,
+    pronouns: u.pronouns,
     role: u.role as Role,
     tz: u.tz,
     statusText: u.status_text,
     statusEmoji: u.status_emoji,
     deactivated: u.deactivated_at !== null,
+    onboarded: u.onboarded_at !== null,
+  };
+}
+
+export function toAdminUserDto(u: users, lastSeenAt: Date | null): AdminUserDto {
+  return { ...toUserDto(u), createdAt: u.created_at.toISOString(), lastSeenAt: lastSeenAt?.toISOString() ?? null };
+}
+
+export function toInviteDto(i: invites): InviteDto {
+  return {
+    id: i.id,
+    kind: i.email ? "email" : "link",
+    email: i.email,
+    role: i.role as Role,
+    invitedBy: i.invited_by,
+    useCount: i.use_count,
+    maxUses: i.max_uses,
+    expiresAt: i.expires_at.toISOString(),
+    createdAt: i.created_at.toISOString(),
   };
 }
 

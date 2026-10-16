@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import type { EventDto } from "@teamchat/shared";
+import type { EventDto, PresenceEventDto } from "@teamchat/shared";
 import type { Server } from "socket.io";
 
 export const rooms = {
@@ -24,6 +24,15 @@ export class RealtimeHub {
 
   joinConversation(userId: string, conversationId: string): void {
     this.server?.in(rooms.user(userId)).socketsJoin(rooms.conversation(conversationId));
+  }
+
+  leaveConversation(userId: string, conversationId: string): void {
+    this.server?.in(rooms.user(userId)).socketsLeave(rooms.conversation(conversationId));
+  }
+
+  // Присутствие эфемерно и не пишется в журнал.
+  emitPresence(payload: PresenceEventDto): void {
+    this.server?.emit("presence", payload);
   }
 
   disconnectSession(sessionId: string): void {

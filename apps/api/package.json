@@ -9,7 +9,7 @@
     "start": "prisma migrate deploy && node dist/main.js",
     "migrate": "prisma migrate deploy",
     "typecheck": "prisma generate && tsc -p tsconfig.json --noEmit",
-    "test:e2e": "node --test \"test/*.test.mjs\""
+    "test:e2e": "tsc -p tsconfig.json && node test/run.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^12.1.3",
@@ -33,6 +33,7 @@
     "@types/express": "^5.0.6",
     "@types/node": "^22.20.5",
     "concurrently": "^10.0.6",
+    "pg": "^8.23.1",
     "socket.io-client": "^4.8.4",
     "typescript": "~6.0.3"
   }

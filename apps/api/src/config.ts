@@ -22,6 +22,18 @@ const Env = z.object({
     .optional()
     .transform((v) => (v ? v : undefined)),
   EMAIL_FROM: z.string().default("Team chat <chat@example.com>"),
+  // Вход через Google включается, когда заданы оба значения. Redirect URI: {APP_URL}/api/auth/google/callback
+  GOOGLE_CLIENT_ID: z
+    .string()
+    .optional()
+    .transform((v) => (v ? v : undefined)),
+  GOOGLE_CLIENT_SECRET: z
+    .string()
+    .optional()
+    .transform((v) => (v ? v : undefined)),
+  // Переопределяются только в e2e-тестах, чтобы не ходить в настоящий Google.
+  GOOGLE_AUTH_URL: z.url().default("https://accounts.google.com/o/oauth2/v2/auth"),
+  GOOGLE_TOKEN_URL: z.url().default("https://oauth2.googleapis.com/token"),
 });
 
 export type Config = z.infer<typeof Env>;
