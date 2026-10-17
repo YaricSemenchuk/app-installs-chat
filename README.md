@@ -108,6 +108,9 @@ TEAMCHAT_URL=https://chat.example.com npm run dist:mac
 ```
 
 Получится `apps/desktop/release/PromobileChat-<версия>-mac.dmg` (универсальный: Apple Silicon и Intel).
+Сертификата Apple нет, поэтому приложение подписано ad-hoc (`identity: "-"`): без подписи macOS на Apple Silicon
+называет скачанное приложение «повреждённым» и не даёт его открыть, а с ad-hoc подписью при первом запуске
+достаточно один раз нажать «Всё равно открыть» в «Конфиденциальность и безопасность» (шаги — на `/download`).
 Установщик для Windows (`dist:win`) собирается на Windows или в GitHub Actions: workflow `desktop` собирает оба,
 адрес берёт из переменной репозитория `TEAMCHAT_URL`. На Mac с Apple Silicon `dist:win` падает с ошибкой
 `-86`: NSIS-сборщику нужен Rosetta.
