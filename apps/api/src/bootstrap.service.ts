@@ -4,6 +4,7 @@ import { PrismaService } from "./db/prisma.service.js";
 import { EventsService } from "./realtime/events.service.js";
 
 // Первый запуск: настройки рабочего пространства, первый владелец и #general. Идемпотентно.
+// Название рабочего пространства берётся из WORKSPACE_NAME при каждом старте, если переменная задана.
 @Injectable()
 export class BootstrapService implements OnApplicationBootstrap {
   private readonly log = new Logger("Bootstrap");
@@ -18,11 +19,15 @@ export class BootstrapService implements OnApplicationBootstrap {
       await this.events.lock(tx);
 
       const ws = await tx.workspace_settings.findUnique({ where: { id: 1 } });
+      const name = config.WORKSPACE_NAME ?? "Team";
       if (!ws) {
         await tx.workspace_settings.create({
-          data: { name: config.WORKSPACE_NAME, allowed_email_domains: config.ALLOWED_EMAIL_DOMAINS },
+          data: { name, allowed_email_domains: config.ALLOWED_EMAIL_DOMAINS },
         });
-        this.log.log(`workspace «${config.WORKSPACE_NAME}» created`);
+        this.log.log(`workspace «${name}» created`);
+      } else if (config.WORKSPACE_NAME && ws.name !== config.WORKSPACE_NAME) {
+        await tx.workspace_settings.update({ where: { id: 1 }, data: { name: config.WORKSPACE_NAME } });
+        this.log.log(`workspace renamed «${ws.name}» → «${config.WORKSPACE_NAME}»`);
       }
 
       let owner = await tx.users.findFirst({ where: { role: "primary_owner" } });

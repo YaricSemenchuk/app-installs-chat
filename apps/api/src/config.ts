@@ -7,7 +7,12 @@ const Env = z.object({
   APP_URL: z.url(),
   AUTH_SECRET: z.string().min(16, "AUTH_SECRET: минимум 16 символов"),
   BOOTSTRAP_OWNER_EMAIL: z.email().transform((v) => v.toLowerCase()),
-  WORKSPACE_NAME: z.string().min(1).default("Team"),
+  // Название рабочего пространства. Задано — сервер при старте приводит к нему название в базе (переименовать =
+  // поменять переменную и перезапустить); не задано — при первом запуске будет «Team».
+  WORKSPACE_NAME: z
+    .string()
+    .optional()
+    .transform((v) => (v?.trim() ? v.trim() : undefined)),
   ALLOWED_EMAIL_DOMAINS: z
     .string()
     .default("")
