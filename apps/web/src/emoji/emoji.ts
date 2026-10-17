@@ -1,6 +1,7 @@
 // Эмодзи: набор грузится отдельным чанком при старте приложения (≈100 КБ), до этого реакции
 // показываются кодом «:+1:». Данные — scripts/build-emoji.mjs.
 import { create } from "zustand";
+import { isStaleBuildError, reloadForNewBuild } from "../lib/staleBuild";
 
 export type Emoji = { char: string; name: string; group: number; label: string; keywords: string };
 export type EmojiIndex = {
@@ -34,6 +35,10 @@ export function loadEmoji(): Promise<EmojiIndex> {
     };
     useEmoji.setState({ index });
     return index;
+  }).catch((err: unknown) => {
+    loading = null; // неудачу не запоминаем: следующая попытка загрузит заново
+    if (isStaleBuildError(err)) reloadForNewBuild();
+    throw err;
   });
   return loading;
 }

@@ -8,9 +8,11 @@ import { CreateChannelDialog } from "../channels/CreateChannelDialog";
 import { NewMessageDialog } from "../channels/NewMessageDialog";
 import { QuickSwitcher } from "../channels/QuickSwitcher";
 import { SearchDialog } from "../search/SearchDialog";
+import { CallBoundary } from "../calls/CallBoundary";
 import { IncomingCall } from "../calls/IncomingCall";
 import { useCalls } from "../calls/store";
 import { desktop } from "../desktop/bridge";
+import { isStaleBuildError, prefetchWhenIdle, reloadForNewBuild } from "../lib/staleBuild";
 import { NotifyBanner, UpdateBanner } from "../notifications/Banners";
 import { setNavigator } from "../notifications/notify";
 import { PreferencesDialog } from "../notifications/PreferencesDialog";
@@ -28,8 +30,17 @@ import type { MenuEntry } from "../ui/Menu";
 import { Toaster } from "../ui/Toaster";
 import s from "./AppShell.module.scss";
 
-// LiveKit тяжёлый: грузим его, только когда начинается звонок.
-const CallWindow = lazy(() => import("../calls/CallWindow").then((m) => ({ default: m.CallWindow })));
+// LiveKit тяжёлый: в начальную загрузку не входит, подгружается в свободное время после старта (см. эффект ниже).
+const loadCallWindow = () => import("../calls/CallWindow");
+const CallWindow = lazy(() =>
+  loadCallWindow()
+    .then((m) => ({ default: m.CallWindow }))
+    .catch((err: unknown) => {
+      // Файл прошлой сборки уже удалён деплоем: перезагрузка подтянет новую.
+      if (isStaleBuildError(err) && reloadForNewBuild()) return new Promise<never>(() => undefined);
+      throw err;
+    }),
+);
 
 type Dialog = "invite" | "profile" | "preferences" | "channel" | "message" | "switcher" | "search" | null;
 
@@ -52,6 +63,12 @@ export function AppShell() {
   const status = useConnection((x) => x.status);
   const calls = useCalls((x) => x.byConversation);
   const inCall = useCalls((x) => x.session !== null);
+  const callsEnabled = useCalls((x) => x.enabled);
+  // Заранее, пока ничего не происходит: после деплоя посреди дня окно звонка и эмодзи уже будут в памяти.
+  useEffect(() => prefetchWhenIdle(loadEmoji), []);
+  useEffect(() => {
+    if (callsEnabled) prefetchWhenIdle(loadCallWindow);
+  }, [callsEnabled]);
   const [dialog, setDialog] = useState<Dialog>(null);
   const dialogRef = useRef<Dialog>(null);
   dialogRef.current = dialog;
@@ -226,9 +243,11 @@ export function AppShell() {
       <QuickSwitcher open={dialog === "switcher"} onOpenChange={close} />
       <SearchDialog open={dialog === "search"} onOpenChange={close} />
       {inCall && (
-        <Suspense fallback={null}>
-          <CallWindow />
-        </Suspense>
+        <CallBoundary>
+          <Suspense fallback={null}>
+            <CallWindow />
+          </Suspense>
+        </CallBoundary>
       )}
       <IncomingCall />
       <Toaster />

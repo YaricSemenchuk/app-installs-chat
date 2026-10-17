@@ -35,7 +35,7 @@ export function ChannelPreview({ thread = true }: { thread?: boolean }) {
     <div className={s.app}>
       <Titlebar me={ME} activity={2} />
       <div className={s.body}>
-        <Sidebar workspace="Promobile">
+        <Sidebar workspace="appinstallschat">
           <ul className={s.navList}>
             <SidebarItem entry={{ kind: "nav", label: "Треды", icon: <MessageSquareText /> }} state={{ unread: true }} />
             <SidebarItem entry={{ kind: "nav", label: "Черновики и отправленные", icon: <SendHorizontal /> }} />

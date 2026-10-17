@@ -18,6 +18,7 @@ import { StubPage } from "../pages/StubPage";
 import { PeoplePage } from "../people/PeoplePage";
 import { SearchPage } from "../search/SearchPage";
 import { AppShell } from "./AppShell";
+import { RouteError } from "../pages/RouteError";
 
 // Главная: туда, откуда отправили на вход (например, /download), иначе в #general.
 function OpenDefaultConversation() {
@@ -34,28 +35,34 @@ function OpenDefaultConversation() {
 const later = "Этот раздел появится в одном из следующих обновлений";
 
 export const router = createBrowserRouter([
-  { path: "/signin", element: <SignInPage /> },
-  { path: "/invite/:token", element: <InvitePage /> },
-  { path: "/welcome", element: <OnboardingPage /> },
-  { path: "/design", element: <DesignPage /> },
-  { path: "/desktop-auth", element: <DesktopAuthPage /> },
-  { path: "/download", element: <DownloadPage /> },
+  // Общий экран ошибки для всех страниц вместо стандартного из React Router.
   {
-    path: "/",
-    element: <AppShell />,
+    errorElement: <RouteError />,
     children: [
-      { index: true, element: <OpenDefaultConversation /> },
-      { path: "c/:conversationId", element: <ConversationPage /> },
-      { path: "m/:messageId", element: <MessageRedirect /> },
-      { path: "admin/people", element: <PeoplePage /> },
-      { path: "admin/desktop", element: <InstallersPage /> },
-      { path: "browse", element: <DirectoryPage /> },
-      { path: "threads", element: <StubPage icon={<MessageSquareText />} title="Треды" text={later} /> },
-      { path: "drafts", element: <StubPage icon={<SendHorizontal />} title="Черновики и отправленные" text={later} /> },
-      { path: "saved", element: <StubPage icon={<Bookmark />} title="Сохранённое" text={later} /> },
-      { path: "files", element: <FilesPage /> },
-      { path: "search", element: <SearchPage /> },
-      { path: "*", element: <StubPage icon={<SearchX />} title="Такой страницы нет" text="Проверьте адрес или выберите разговор слева" /> },
+      { path: "/signin", element: <SignInPage /> },
+      { path: "/invite/:token", element: <InvitePage /> },
+      { path: "/welcome", element: <OnboardingPage /> },
+      { path: "/design", element: <DesignPage /> },
+      { path: "/desktop-auth", element: <DesktopAuthPage /> },
+      { path: "/download", element: <DownloadPage /> },
+      {
+        path: "/",
+        element: <AppShell />,
+        children: [
+          { index: true, element: <OpenDefaultConversation /> },
+          { path: "c/:conversationId", element: <ConversationPage /> },
+          { path: "m/:messageId", element: <MessageRedirect /> },
+          { path: "admin/people", element: <PeoplePage /> },
+          { path: "admin/desktop", element: <InstallersPage /> },
+          { path: "browse", element: <DirectoryPage /> },
+          { path: "threads", element: <StubPage icon={<MessageSquareText />} title="Треды" text={later} /> },
+          { path: "drafts", element: <StubPage icon={<SendHorizontal />} title="Черновики и отправленные" text={later} /> },
+          { path: "saved", element: <StubPage icon={<Bookmark />} title="Сохранённое" text={later} /> },
+          { path: "files", element: <FilesPage /> },
+          { path: "search", element: <SearchPage /> },
+          { path: "*", element: <StubPage icon={<SearchX />} title="Такой страницы нет" text="Проверьте адрес или выберите разговор слева" /> },
+        ],
+      },
     ],
   },
 ]);
