@@ -21,19 +21,25 @@ export const EmailVerifyInput = z.object({
 });
 export type EmailVerifyInput = z.infer<typeof EmailVerifyInput>;
 
-const MessageText = z
-  .string()
-  .max(MESSAGE_MAX_LENGTH)
-  .refine((v) => v.trim().length > 0, "Пустое сообщение");
+export const MAX_FILE_BYTES = 100 * 1024 * 1024;
+export const MAX_FILES_PER_MESSAGE = 10;
+export const THUMB_SIZES = [360, 720] as const;
 
-export const SendMessageInput = z.object({
-  clientMsgId: z.uuid(),
-  text: MessageText,
-  parentId: z.uuid().optional(), // ответ в треде
-  alsoInChannel: z.boolean().default(false), // ответ из треда показать и в ленте разговора
-});
+const MessageText = z.string().max(MESSAGE_MAX_LENGTH);
+
+// Пустой текст можно, только если к сообщению приложены файлы.
+export const SendMessageInput = z
+  .object({
+    clientMsgId: z.uuid(),
+    text: MessageText.default(""),
+    parentId: z.uuid().optional(), // ответ в треде
+    alsoInChannel: z.boolean().default(false), // ответ из треда показать и в ленте разговора
+    fileIds: z.array(z.uuid()).max(MAX_FILES_PER_MESSAGE, `Не больше ${MAX_FILES_PER_MESSAGE} файлов в сообщении`).default([]),
+  })
+  .refine((v) => v.text.trim().length > 0 || v.fileIds.length > 0, { message: "Пустое сообщение", path: ["text"] });
 export type SendMessageInput = z.infer<typeof SendMessageInput>;
 
+// Текст правки может опустеть, если в сообщении есть файлы: это сервер проверяет сам.
 export const EditMessageInput = z.object({ text: MessageText });
 export type EditMessageInput = z.infer<typeof EditMessageInput>;
 
@@ -53,6 +59,33 @@ export const ThreadSubscriptionInput = z.object({ subscribed: z.boolean() });
 export type ThreadSubscriptionInput = z.infer<typeof ThreadSubscriptionInput>;
 
 export const THREAD_SUMMARY_USERS = 5;
+
+// ───────────── файлы и поиск ─────────────
+
+export const CreateFileInput = z.object({
+  name: z.string().trim().min(1, "У файла нет имени").max(255, "Слишком длинное имя файла"),
+  size: z.number().int().min(0).max(MAX_FILE_BYTES, "Файл больше 100 МБ"),
+  mimetype: z.string().trim().max(255).default(""),
+});
+export type CreateFileInput = z.infer<typeof CreateFileInput>;
+
+export const ListFilesQuery = z.object({
+  type: z.enum(["all", "images", "documents"]).default("all"),
+  query: z.string().trim().max(200).optional(),
+  mine: z.stringbool().default(false),
+  before: z.string().max(200).optional(), // курсор из прошлой страницы (время и два id)
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+});
+export type ListFilesQuery = z.infer<typeof ListFilesQuery>;
+
+export const SearchMessagesQuery = z.object({
+  q: z.string().trim().min(1, "Пустой запрос").max(500),
+  conversationId: z.uuid().optional(),
+  userId: z.uuid().optional(),
+  before: z.coerce.number().int().positive().optional(), // seq последнего результата прошлой страницы
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+});
+export type SearchMessagesQuery = z.infer<typeof SearchMessagesQuery>;
 
 // Окно правки из настроек пространства: null — править можно всегда.
 export function canStillEdit(createdAt: string | Date, windowMinutes: number | null, now = Date.now()): boolean {
@@ -208,6 +241,27 @@ export type DirectoryChannelDto = ConversationInfoDto & { memberCount: number; i
 
 export type ReactionDto = { emoji: string; userIds: string[] }; // в порядке, в каком ставили
 
+export type FileDto = {
+  id: string;
+  name: string;
+  mimetype: string;
+  size: number; // байты
+  uploaderId: string;
+  createdAt: string;
+  status: "pending" | "ready";
+  // Только для картинок, которые сервер сам смог прочитать: размеры и готовые миниатюры (ширины из THUMB_SIZES).
+  image: { width: number; height: number; thumbs: number[] } | null;
+  deleted: boolean;
+};
+
+export type UploadTicketDto = { file: FileDto; uploadUrl: string }; // байты — PUT на uploadUrl
+
+export type SharedFileDto = { file: FileDto; messageId: string; conversationId: string; userId: string; sharedAt: string };
+export type FilesPageDto = { items: SharedFileDto[]; nextCursor: string | null };
+
+export type SearchHitDto = { message: MessageDto; highlights: string[] }; // слова, которые совпали
+export type SearchPageDto = { hits: SearchHitDto[]; nextCursor: number | null };
+
 export type MessageDto = {
   id: string;
   seq: number;
@@ -226,6 +280,7 @@ export type MessageDto = {
   replyUserIds: string[]; // последние ответившие, до THREAD_SUMMARY_USERS
   lastReplyAt: string | null;
   reactions: ReactionDto[];
+  files: FileDto[]; // по порядку вложения
 };
 
 export type ThreadSummaryDto = Pick<MessageDto, "replyCount" | "replyUserIds" | "lastReplyAt"> & {
