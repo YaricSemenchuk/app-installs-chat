@@ -1,0 +1,84 @@
+@use "../styles/mixins" as *;
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  width: var(--layout-thread-panel-default);
+  min-width: var(--layout-thread-panel-min);
+  max-width: var(--layout-thread-panel-max);
+  height: 100%;
+  border-left: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: var(--layout-header);
+  padding: 0 var(--space-8) 0 var(--space-16);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.titles {
+  display: flex;
+  flex: 1;
+  align-items: baseline;
+  gap: var(--space-8);
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  color: var(--color-text);
+  @include type(title);
+}
+
+.caption {
+  color: var(--color-text-muted);
+  @include type(caption);
+  @include truncate;
+}
+
+.body {
+  flex: 1;
+  padding: var(--space-8) 0;
+  overflow-y: auto;
+}
+
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding: var(--space-16) var(--layout-message-gutter);
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin: var(--space-8) var(--layout-message-gutter);
+  color: var(--color-text-muted);
+  @include type(caption);
+
+  &::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--color-border);
+  }
+}
+
+.also {
+  padding: var(--space-8) var(--space-4) 0;
+}
+
+.readonly {
+  margin: 0 var(--layout-message-gutter) var(--space-16);
+  padding: var(--space-12) var(--space-16);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-input);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  @include type(body);
+}

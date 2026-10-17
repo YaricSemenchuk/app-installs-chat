@@ -18,10 +18,20 @@ export type MenuEntry =
     }
   | { kind: "separator" };
 
-export function Menu({ trigger, items, align = "end" }: { trigger: ReactElement; items: MenuEntry[]; align?: "start" | "end" }) {
+export function Menu({
+  trigger,
+  items,
+  align = "end",
+  onOpenChange,
+}: {
+  trigger: ReactElement;
+  items: MenuEntry[];
+  align?: "start" | "end";
+  onOpenChange?: (open: boolean) => void;
+}) {
   const keepFocus = useRef(false);
   return (
-    <D.Root>
+    <D.Root onOpenChange={onOpenChange}>
       <D.Trigger asChild>{trigger}</D.Trigger>
       <D.Portal>
         <D.Content

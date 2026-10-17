@@ -10,6 +10,12 @@
   animation: appear var(--motion-fast) var(--motion-ease);
 }
 
+.bare {
+  width: auto;
+  padding: 0;
+  overflow: hidden;
+}
+
 @keyframes appear {
   from {
     opacity: 0;

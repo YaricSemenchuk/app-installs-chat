@@ -12,11 +12,13 @@ import { Titlebar } from "../chat/Titlebar";
 import { displayOf, isOnline, queryClient, useBoot } from "../data/boot";
 import { conversationTitle, dmPeople, isSelfDm } from "../data/conversations";
 import { useMessages } from "../data/messages";
+import { loadEmoji } from "../emoji/emoji";
 import { InviteDialog } from "../people/InviteDialog";
 import { ProfileDialog } from "../people/ProfileDialog";
 import { startRealtime, stopRealtime, useConnection } from "../realtime/connection";
 import { ConnectionBanner, Skeleton } from "../ui/Feedback";
 import type { MenuEntry } from "../ui/Menu";
+import { Toaster } from "../ui/Toaster";
 import s from "./AppShell.module.scss";
 
 type Dialog = "invite" | "profile" | "channel" | "message" | "switcher" | null;
@@ -52,6 +54,13 @@ export function AppShell() {
     });
     // Соединение одно на сессию: не пересоздаём его при обновлении boot.
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready]);
+
+  // Эмодзи нужны реакциям в ленте: подгружаем, как только оболочка готова.
+  useEffect(() => {
+    if (!ready) return;
+    const t = setTimeout(() => void loadEmoji(), 300);
+    return () => clearTimeout(t);
   }, [ready]);
 
   // ⌘K / Ctrl+K — быстрый переход откуда угодно.
@@ -172,6 +181,7 @@ export function AppShell() {
       <CreateChannelDialog open={dialog === "channel"} onOpenChange={close} />
       <NewMessageDialog open={dialog === "message"} onOpenChange={close} />
       <QuickSwitcher open={dialog === "switcher"} onOpenChange={close} />
+      <Toaster />
     </div>
   );
 }

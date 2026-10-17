@@ -1,0 +1,46 @@
+@use "../styles/mixins" as *;
+
+.deleted {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.replyContext {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  max-width: 100%;
+  margin-bottom: var(--space-2);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  @include type(caption);
+
+  &:hover {
+    color: var(--color-link);
+  }
+
+  svg {
+    flex: none;
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.replyContextText {
+  @include truncate;
+}
+
+.deletePreview {
+  margin: 0;
+  padding: var(--space-8) var(--space-12);
+  border-left: 3px solid var(--color-border-strong);
+  border-radius: 0 var(--radius-chip) var(--radius-chip) 0;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  @include type(body);
+}

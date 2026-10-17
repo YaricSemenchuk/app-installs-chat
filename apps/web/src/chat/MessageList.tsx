@@ -1,19 +1,15 @@
 // Лента разговора: подгрузка истории вверх с сохранением позиции, прилипание к низу,
 // разделители дней и «Новые». Виртуализация (react-virtuoso) — когда лента станет тяжёлой.
 import { Fragment, useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
-import { LogIn, LogOut, Pencil } from "lucide-react";
 import type { BootDto } from "@teamchat/shared";
-import { isOnline, userName } from "../data/boot";
-import { UserCard } from "../people/UserCard";
-import { useMessages, type ChatMessage } from "../data/messages";
-import { dayKey, dayLabel, formatFull, formatTime } from "../lib/format";
-import { renderMessageText } from "../lib/mentions";
+import { useMessages } from "../data/messages";
+import { dayKey, dayLabel } from "../lib/format";
 import { EmptyState, Skeleton } from "../ui/Feedback";
 import { Spinner } from "../ui/Spinner";
-import { DateDivider, Message, SystemMessage, UnreadDivider } from "./Message";
+import { DateDivider, UnreadDivider } from "./Message";
+import { MessageRow } from "./MessageRow";
 import s from "./MessageList.module.scss";
 
-const GROUP_WINDOW_MS = 5 * 60_000;
 const NEAR_BOTTOM_PX = 80;
 
 type Props = {
@@ -23,24 +19,23 @@ type Props = {
   unreadAfterSeq: number; // курсор на момент открытия: всё после него помечается «Новые»
   onAtBottomChange: (atBottom: boolean) => void;
   intro: { icon: ReactNode; title: string; text: string };
-  onMessageUser?: (userId: string) => void;
+  focusId?: string | null; // переход по ссылке: прокрутить к сообщению вместо низа
 };
 
-export function MessageList({ conversationId, title, boot, unreadAfterSeq, onAtBottomChange, intro, onMessageUser }: Props) {
+export function MessageList({ conversationId, title, boot, unreadAfterSeq, onAtBottomChange, intro, focusId }: Props) {
   const feed = useMessages((st) => st.feeds[conversationId]);
   const loadBefore = useMessages((st) => st.loadBefore);
-  const retry = useMessages((st) => st.retry);
-  const discard = useMessages((st) => st.discard);
   const scroller = useRef<HTMLDivElement>(null);
   const topSentinel = useRef<HTMLDivElement>(null);
   const atBottom = useRef(true);
   const initialScrollDone = useRef(false);
   const prevFirstId = useRef<string | undefined>(undefined);
   const prevHeight = useRef(0);
+  const focusedId = useRef<string | null>(null);
 
   const items = feed?.items ?? [];
   const meId = boot.me.id;
-  const firstUnread = items.find((m) => !m.local && m.seq > unreadAfterSeq && m.userId !== meId && m.subtype === null);
+  const firstUnread = items.find((m) => !m.local && !m.deleted && m.seq > unreadAfterSeq && m.userId !== meId && m.subtype === null);
 
   // Позиция: при первом показе — к «Новые» или вниз; при подгрузке истории — держим то, что видел человек;
   // при новых сообщениях — вниз, если он и так был внизу.
@@ -48,7 +43,12 @@ export function MessageList({ conversationId, title, boot, unreadAfterSeq, onAtB
     const el = scroller.current;
     if (!el || !feed?.loaded) return;
     const firstId = items[0]?.id;
-    if (!initialScrollDone.current) {
+    const focus = focusId ? el.querySelector<HTMLElement>(`[data-id="${focusId}"]`) : null;
+    if (focus && focusedId.current !== focusId) {
+      focus.scrollIntoView({ block: "center" });
+      focusedId.current = focusId ?? null;
+      initialScrollDone.current = true;
+    } else if (!initialScrollDone.current) {
       const divider = el.querySelector<HTMLElement>("[data-unread-divider]");
       if (divider) el.scrollTop = Math.max(0, divider.offsetTop - el.clientHeight / 3);
       else el.scrollTop = el.scrollHeight;
@@ -60,7 +60,7 @@ export function MessageList({ conversationId, title, boot, unreadAfterSeq, onAtB
     }
     prevFirstId.current = firstId;
     prevHeight.current = el.scrollHeight;
-  }, [items, feed?.loaded]);
+  }, [items, feed?.loaded, focusId]);
 
   // Верхняя граница видна — грузим историю.
   useEffect(() => {
@@ -127,14 +127,7 @@ export function MessageList({ conversationId, title, boot, unreadAfterSeq, onAtB
           <Fragment key={m.clientMsgId ?? m.id}>
             {newDay && <DateDivider label={dayLabel(m.createdAt)} />}
             {m === firstUnread && <UnreadMarker />}
-            <Row
-              message={m}
-              prev={newDay || m === firstUnread ? undefined : prev}
-              boot={boot}
-              onRetry={retry}
-              onDiscard={discard}
-              onMessageUser={onMessageUser}
-            />
+            <MessageRow message={m} prev={newDay || m === firstUnread ? undefined : prev} place="feed" />
           </Fragment>
         );
       })}
@@ -148,76 +141,4 @@ function UnreadMarker() {
       <UnreadDivider />
     </div>
   );
-}
-
-function Row({
-  message: m,
-  prev,
-  boot,
-  onRetry,
-  onDiscard,
-  onMessageUser,
-}: {
-  message: ChatMessage;
-  prev: ChatMessage | undefined;
-  boot: BootDto;
-  onRetry: (conversationId: string, clientMsgId: string) => void;
-  onDiscard: (conversationId: string, clientMsgId: string) => void;
-  onMessageUser?: (userId: string) => void;
-}) {
-  const author = userName(boot, m.userId);
-  const user = boot.users.find((u) => u.id === m.userId);
-  const system = systemLine(m, author);
-  if (system) return system;
-  const mentionsMe = m.mentions.includes(boot.me.id);
-  const continuation =
-    !!prev &&
-    prev.subtype === null &&
-    prev.userId === m.userId &&
-    new Date(m.createdAt).getTime() - new Date(prev.createdAt).getTime() < GROUP_WINDOW_MS;
-
-  return (
-    <Message
-      id={m.id}
-      author={author}
-      authorId={m.userId}
-      authorCard={
-        user ? (
-          <UserCard
-            user={user}
-            online={isOnline(boot, user.id)}
-            onMessage={onMessageUser && !user.deactivated ? () => onMessageUser(user.id) : undefined}
-          />
-        ) : undefined
-      }
-      time={formatTime(m.createdAt)}
-      fullTime={formatFull(m.createdAt)}
-      isoTime={m.createdAt}
-      continuation={continuation}
-      state={m.local === "sending" ? "sending" : m.local === "failed" ? "failed" : mentionsMe ? "mentionsMe" : "default"}
-      edited={m.editedAt !== null}
-      onRetry={m.clientMsgId ? () => onRetry(m.conversationId, m.clientMsgId!) : undefined}
-      onDiscard={m.clientMsgId ? () => onDiscard(m.conversationId, m.clientMsgId!) : undefined}
-    >
-      <p className={s.text}>{renderMessageText(m.text, boot, mentionsMe)}</p>
-    </Message>
-  );
-}
-
-// Системные строки ленты: вход, выход, тема, описание, название.
-function systemLine(m: ChatMessage, author: string) {
-  switch (m.subtype) {
-    case "join":
-      return <SystemMessage icon={<LogIn />}>{author} теперь в канале</SystemMessage>;
-    case "leave":
-      return <SystemMessage icon={<LogOut />}>{author} вышел(а) из канала</SystemMessage>;
-    case "topic":
-      return <SystemMessage icon={<Pencil />}>{m.text ? `${author} сменил(а) тему: «${m.text}»` : `${author} убрал(а) тему`}</SystemMessage>;
-    case "purpose":
-      return <SystemMessage icon={<Pencil />}>{m.text ? `${author} обновил(а) описание: «${m.text}»` : `${author} убрал(а) описание`}</SystemMessage>;
-    case "rename":
-      return <SystemMessage icon={<Pencil />}>{`${author} переименовал(а) канал в #${m.text}`}</SystemMessage>;
-    default:
-      return null;
-  }
 }

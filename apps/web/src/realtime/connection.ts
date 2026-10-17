@@ -2,7 +2,7 @@
 // сервер досылает пропущенное. События применяются идемпотентно, повтор не вредит.
 import { io, type Socket } from "socket.io-client";
 import { create } from "zustand";
-import { SOCKET_PATH, type BootDto, type EventDto, type PresenceEventDto } from "@teamchat/shared";
+import { SOCKET_PATH, type BootDto, type ConversationDto, type EventDto, type PresenceEventDto } from "@teamchat/shared";
 import { api } from "../api/http";
 import { adminUsersKey, bootKey, getBoot, queryClient, updateBoot, updateConversation, upsertUser } from "../data/boot";
 
@@ -31,6 +31,26 @@ function markSeen(id: number) {
   watermark = Math.max(watermark, id);
 }
 
+// Правка и удаление могут добавить или снять непрочитанное упоминание — точные счётчики берём у сервера.
+const countsTimers = new Map<string, ReturnType<typeof setTimeout>>();
+function refreshCounts(conversationId: string) {
+  clearTimeout(countsTimers.get(conversationId));
+  countsTimers.set(
+    conversationId,
+    setTimeout(() => {
+      countsTimers.delete(conversationId);
+      void api<ConversationDto>(`/conversations/${conversationId}`)
+        .then((c) => updateConversation(conversationId, (x) => ({ ...x, unreadCount: c.unreadCount, mentionCount: c.mentionCount, latestSeq: c.latestSeq })))
+        .catch(() => undefined);
+    }, 300),
+  );
+}
+
+const unreadFor = (conversationId: string, seq: number, userId: string, me: string | undefined) => {
+  const c = getBoot()?.conversations.find((x) => x.id === conversationId);
+  return !!c && userId !== me && seq > c.lastReadSeq;
+};
+
 function apply(ev: EventDto) {
   if (seen.has(ev.id)) return;
   markSeen(ev.id);
@@ -45,6 +65,8 @@ function apply(ev: EventDto) {
         void queryClient.invalidateQueries({ queryKey: bootKey });
         break;
       }
+      // Ответ только в треде счётчики разговора не трогает.
+      if (m.parentId && !m.alsoInChannel) break;
       updateConversation(m.conversationId, (c) => {
         const latestSeq = Math.max(c.latestSeq, m.seq);
         if (m.userId === me) return { ...c, latestSeq, lastReadSeq: Math.max(c.lastReadSeq, m.seq) };
@@ -56,6 +78,25 @@ function apply(ev: EventDto) {
       });
       break;
     }
+    case "message.updated": {
+      const m = ev.payload;
+      useMessages.getState().applyUpdate(m);
+      if ((!m.parentId || m.alsoInChannel) && unreadFor(m.conversationId, m.seq, m.userId, me)) refreshCounts(m.conversationId);
+      break;
+    }
+    case "message.deleted": {
+      const d = ev.payload;
+      useMessages.getState().applyDelete(d);
+      if (unreadFor(d.conversationId, d.seq, d.userId, me)) refreshCounts(d.conversationId);
+      break;
+    }
+    case "thread.updated":
+      useMessages.getState().applySummary(ev.payload);
+      break;
+    case "reaction.added":
+    case "reaction.removed":
+      useMessages.getState().applyReaction(ev.payload, ev.kind === "reaction.added");
+      break;
     case "conversation.updated":
       updateConversation(ev.payload.id, (c) => ({ ...c, ...ev.payload }));
       break;

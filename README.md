@@ -31,11 +31,15 @@ npm run dev
 
 ```bash
 npm run typecheck
-npm run test:e2e
+npm test
 ```
 
-e2e сами создают базу `teamchat_test` рядом с `DATABASE_URL` (пересоздают при каждом запуске), поднимают свой
-экземпляр API на порту 3201 и поддельный Google на 3299 — dev-сервер для них не нужен.
+`npm test` гоняет юнит-тесты разметки сообщений (`packages/shared`) и e2e. e2e сами создают базу `teamchat_test`
+рядом с `DATABASE_URL` (пересоздают при каждом запуске), поднимают свой экземпляр API на порту 3201 и поддельный
+Google на 3299 — dev-сервер для них не нужен. Только e2e — `npm run test:e2e`.
+
+Набор эмодзи (`apps/web/src/emoji/emoji-data.json`) собран из emojibase-data и лежит в репозитории; после
+обновления пакета пересоберите его: `npm run emoji`.
 
 ### Вход через Google
 

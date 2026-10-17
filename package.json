@@ -12,7 +12,9 @@
     "build": "npm run build -w @teamchat/shared && npm run build -w @teamchat/api && npm run build -w @teamchat/web",
     "start": "npm run start -w @teamchat/api",
     "typecheck": "npm run build -w @teamchat/shared && npm run typecheck --workspaces --if-present",
-    "test:e2e": "npm run test:e2e -w @teamchat/api"
+    "test:e2e": "npm run test:e2e -w @teamchat/api",
+    "emoji": "node scripts/build-emoji.mjs",
+    "test": "npm run test -w @teamchat/shared && npm run test:e2e"
   },
   "devDependencies": {
     "concurrently": "^10.0.6"

@@ -33,6 +33,12 @@ type Props = {
   onDiscard?: () => void;
   authorId?: string; // для цвета аватара: один человек — один цвет
   authorCard?: ReactNode; // карточка по клику на имя или аватар
+  // Живая лента подставляет свои части; без них — статичный вид для страницы дизайна.
+  actions?: ReactNode | false;
+  reactionsSlot?: ReactNode;
+  threadSlot?: ReactNode;
+  context?: ReactNode; // строка над текстом: «ответ в треде: …»
+  pinned?: boolean; // действия видны, пока открыт пикер или меню
   children: ReactNode;
 };
 
@@ -52,6 +58,11 @@ export function Message({
   onDiscard,
   authorId,
   authorCard,
+  actions,
+  reactionsSlot,
+  threadSlot,
+  context,
+  pinned = false,
   children,
 }: Props) {
   const avatar = <Avatar name={author} id={authorId} size="l" decorative />;
@@ -65,7 +76,7 @@ export function Message({
     );
   return (
     <article
-      className={cx(s.message, continuation && s.continuation, s[state])}
+      className={cx(s.message, continuation && s.continuation, s[state], pinned && s.hover)}
       aria-label={`${author}, ${time}`}
       tabIndex={-1}
       data-id={id}
@@ -107,6 +118,7 @@ export function Message({
             </time>
           </div>
         )}
+        {context}
         <div className={cx(s.body, edited && s.bodyEdited)}>
           {children}
           {edited && <span className={s.edited}> (изменено)</span>}
@@ -124,7 +136,8 @@ export function Message({
             </button>
           </p>
         )}
-        {reactions && reactions.length > 0 && (
+        {reactionsSlot}
+        {!reactionsSlot && reactions && reactions.length > 0 && (
           <div className={s.reactions}>
             {reactions.map((r) => (
               <ReactionPill key={r.emoji} {...r} />
@@ -134,14 +147,21 @@ export function Message({
             </button>
           </div>
         )}
-        {thread && <ThreadSummary {...thread} />}
+        {threadSlot ?? (thread && <ThreadSummary {...thread} />)}
       </div>
-      <MessageActions />
+      {actions === undefined ? <MessageActions /> : actions}
     </article>
   );
 }
 
-export function ReactionPill({ emoji, count, mine = false, who }: Reaction) {
+export function ReactionPill({
+  emoji,
+  count,
+  mine = false,
+  who,
+  onClick,
+  disabled,
+}: Reaction & { onClick?: () => void; disabled?: boolean }) {
   return (
     <button
       type="button"
@@ -149,6 +169,8 @@ export function ReactionPill({ emoji, count, mine = false, who }: Reaction) {
       aria-pressed={mine}
       aria-label={`Реакция ${emoji}, ${count}${mine ? ", вы среди них" : ""}`}
       title={who}
+      onClick={onClick}
+      disabled={disabled}
     >
       <span className={s.reactionEmoji}>{emoji}</span>
       <span className={s.reactionCount}>{count}</span>
@@ -156,12 +178,26 @@ export function ReactionPill({ emoji, count, mine = false, who }: Reaction) {
   );
 }
 
-export function ThreadSummary({ names, count, last, unread }: { names: string[]; count: number; last: string; unread?: boolean }) {
+export function ThreadSummary({
+  names,
+  ids,
+  count,
+  last,
+  unread,
+  onClick,
+}: {
+  names: string[];
+  ids?: string[];
+  count: number;
+  last: string;
+  unread?: boolean;
+  onClick?: () => void;
+}) {
   return (
-    <button type="button" className={s.thread}>
+    <button type="button" className={s.thread} onClick={onClick} aria-label={`Открыть тред: ${count} ${plural(count, "ответ", "ответа", "ответов")}`}>
       <span className={s.threadAvatars}>
-        {names.slice(0, 5).map((n) => (
-          <Avatar key={n} name={n} size="m" decorative />
+        {names.slice(0, 5).map((n, i) => (
+          <Avatar key={ids?.[i] ?? n} name={n} id={ids?.[i]} size="m" decorative />
         ))}
       </span>
       {unread && <span className={s.threadDot} aria-label="есть новые ответы" />}

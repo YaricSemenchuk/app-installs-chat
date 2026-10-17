@@ -1,0 +1,93 @@
+@use "../styles/mixins" as *;
+
+.markup {
+  > * + * {
+    margin-top: var(--space-4);
+  }
+
+  // Строки сообщения идут без отступов, как набраны; отступы — только вокруг кода, цитат и списков.
+  > p + p {
+    margin-top: 0;
+  }
+
+  em {
+    font-style: italic;
+  }
+
+  s {
+    color: var(--color-text-secondary);
+  }
+}
+
+.big {
+  font-size: var(--type-heading-l-size);
+  line-height: var(--type-heading-l-line);
+}
+
+.code {
+  padding: 1px var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-code-bg);
+  color: var(--color-code-text);
+  font-family: var(--font-mono);
+  @include type(code);
+}
+
+.pre {
+  margin: 0;
+  padding: var(--space-8) var(--space-12);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-chip);
+  background: var(--color-code-bg);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  white-space: pre;
+  overflow-x: auto;
+  @include type(code);
+}
+
+.quote {
+  margin: 0;
+  padding-left: var(--space-12);
+  border-left: 3px solid var(--color-border-strong);
+  color: var(--color-text-secondary);
+}
+
+.list {
+  margin: 0;
+  padding-left: var(--space-24);
+
+  .list {
+    margin-top: 0;
+  }
+
+  li + li {
+    margin-top: var(--space-2);
+  }
+}
+
+ul.list {
+  list-style: disc;
+
+  ul.list {
+    list-style: circle;
+  }
+}
+
+ol.list {
+  list-style: decimal;
+}
+
+.channel {
+  padding: 0 var(--space-2);
+  border-radius: 4px;
+  background: var(--color-mention-bg);
+  color: var(--color-mention-text);
+  font-weight: 500;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
