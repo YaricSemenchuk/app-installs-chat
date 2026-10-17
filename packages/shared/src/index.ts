@@ -21,14 +21,44 @@ export const EmailVerifyInput = z.object({
 });
 export type EmailVerifyInput = z.infer<typeof EmailVerifyInput>;
 
+const MessageText = z
+  .string()
+  .max(MESSAGE_MAX_LENGTH)
+  .refine((v) => v.trim().length > 0, "Пустое сообщение");
+
 export const SendMessageInput = z.object({
   clientMsgId: z.uuid(),
-  text: z
-    .string()
-    .max(MESSAGE_MAX_LENGTH)
-    .refine((v) => v.trim().length > 0, "Пустое сообщение"),
+  text: MessageText,
+  parentId: z.uuid().optional(), // ответ в треде
+  alsoInChannel: z.boolean().default(false), // ответ из треда показать и в ленте разговора
 });
 export type SendMessageInput = z.infer<typeof SendMessageInput>;
+
+export const EditMessageInput = z.object({ text: MessageText });
+export type EditMessageInput = z.infer<typeof EditMessageInput>;
+
+// Реакции храним по коду эмодзи (как :+1:), а не символом: так их можно сравнивать и считать.
+export const EMOJI_NAME_RE = /^[a-z0-9_+-]{1,100}(::skin-tone-[2-6])?$/;
+export const MAX_REACTIONS_PER_MESSAGE = 50;
+export const ReactionInput = z.object({ emoji: z.string().regex(EMOJI_NAME_RE, "Неизвестный эмодзи") });
+export type ReactionInput = z.infer<typeof ReactionInput>;
+
+export const ListRepliesQuery = z.object({
+  after: z.coerce.number().int().nonnegative().optional(),
+  limit: z.coerce.number().int().min(1).max(200).default(100),
+});
+export type ListRepliesQuery = z.infer<typeof ListRepliesQuery>;
+
+export const ThreadSubscriptionInput = z.object({ subscribed: z.boolean() });
+export type ThreadSubscriptionInput = z.infer<typeof ThreadSubscriptionInput>;
+
+export const THREAD_SUMMARY_USERS = 5;
+
+// Окно правки из настроек пространства: null — править можно всегда.
+export function canStillEdit(createdAt: string | Date, windowMinutes: number | null, now = Date.now()): boolean {
+  if (windowMinutes === null) return true;
+  return new Date(createdAt).getTime() + windowMinutes * 60_000 > now;
+}
 
 export const ListMessagesQuery = z.object({
   before: z.coerce.number().int().positive().optional(),
@@ -176,6 +206,8 @@ export type ConversationDto = ConversationInfoDto & {
 
 export type DirectoryChannelDto = ConversationInfoDto & { memberCount: number; isMember: boolean };
 
+export type ReactionDto = { emoji: string; userIds: string[] }; // в порядке, в каком ставили
+
 export type MessageDto = {
   id: string;
   seq: number;
@@ -183,11 +215,35 @@ export type MessageDto = {
   userId: string;
   clientMsgId: string | null;
   subtype: string | null;
-  text: string;
+  text: string; // разметка, см. markup.ts; у удалённого — пусто
   mentions: string[]; // кого задело: @человек, а также раскрытые @here / @channel
   createdAt: string;
   editedAt: string | null;
+  deleted: boolean; // удалённое остаётся в ленте, только если у него есть ответы
+  parentId: string | null; // это ответ в треде
+  alsoInChannel: boolean; // ответ, показанный и в ленте
+  replyCount: number; // сводка треда на родителе
+  replyUserIds: string[]; // последние ответившие, до THREAD_SUMMARY_USERS
+  lastReplyAt: string | null;
+  reactions: ReactionDto[];
 };
+
+export type ThreadSummaryDto = Pick<MessageDto, "replyCount" | "replyUserIds" | "lastReplyAt"> & {
+  conversationId: string;
+  parentId: string;
+};
+
+export type RepliesPageDto = {
+  parent: MessageDto;
+  replies: MessageDto[]; // по возрастанию seq
+  hasMore: boolean;
+  subscribed: boolean; // слежу ли я за тредом
+};
+
+export type MessageLinkDto = { conversationId: string; messageId: string; parentId: string | null; seq: number };
+
+export type ReactionEventDto = { conversationId: string; messageId: string; parentId: string | null; emoji: string; userId: string };
+export type MessageDeletedDto = Pick<MessageDto, "id" | "conversationId" | "parentId" | "seq" | "userId" | "mentions">;
 
 // ───────────── каналы, ЛС, упоминания ─────────────
 
@@ -262,24 +318,19 @@ export type BrowseQuery = z.infer<typeof BrowseQuery>;
 // Упоминания в тексте хранятся токенами с id, а не именами: переименования ничего не ломают.
 export const mentionToken = {
   user: (id: string) => `<@${id}>`,
+  conversation: (id: string) => `<#${id}>`,
   here: "<!here>",
   channel: "<!channel>",
   everyone: "<!everyone>",
 } as const;
 
-export const MENTION_TOKEN_RE = /<@([0-9a-f-]{36})>|<!(here|channel|everyone)>/g;
+export * from "./markup.js";
 
-export function extractMentions(text: string): { userIds: string[]; broadcast: Array<"here" | "channel" | "everyone"> } {
-  const userIds = new Set<string>();
-  const broadcast = new Set<"here" | "channel" | "everyone">();
-  for (const m of text.matchAll(MENTION_TOKEN_RE)) {
-    if (m[1]) userIds.add(m[1]);
-    else if (m[2]) broadcast.add(m[2] as "here" | "channel" | "everyone");
-  }
-  return { userIds: [...userIds], broadcast: [...broadcast] };
-}
-
-export type WorkspaceDto = { name: string; whoCanInvite: "everyone" | "admins" };
+export type WorkspaceDto = {
+  name: string;
+  whoCanInvite: "everyone" | "admins";
+  messageEditWindowMinutes: number | null; // null — править можно всегда
+};
 
 export type BootDto = {
   me: UserDto;
@@ -299,6 +350,11 @@ export type MessagesPageDto = {
 
 export type EventDto =
   | { id: number; kind: "message.created"; conversationId: string; payload: MessageDto }
+  | { id: number; kind: "message.updated"; conversationId: string; payload: MessageDto }
+  | { id: number; kind: "message.deleted"; conversationId: string; payload: MessageDeletedDto }
+  | { id: number; kind: "thread.updated"; conversationId: string; payload: ThreadSummaryDto }
+  | { id: number; kind: "reaction.added"; conversationId: string; payload: ReactionEventDto }
+  | { id: number; kind: "reaction.removed"; conversationId: string; payload: ReactionEventDto }
   | { id: number; kind: "read.updated"; userId: string; payload: { conversationId: string; lastReadSeq: number } }
   | { id: number; kind: "user.created"; payload: UserDto }
   | { id: number; kind: "user.updated"; payload: UserDto }
