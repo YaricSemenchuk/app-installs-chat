@@ -1,10 +1,10 @@
-// S02 — первый вход: как называть человека и где он работает. Часовой пояс берём из браузера.
+// S02 — первый вход: фото, как называть человека и где он работает. Часовой пояс берём из браузера.
 import { useState, type SubmitEvent } from "react";
 import { Navigate, useNavigate } from "react-router";
 import type { UserDto } from "@teamchat/shared";
 import { api, isUnauthorized } from "../api/http";
 import { updateBoot, upsertUser, useBoot } from "../data/boot";
-import { Avatar } from "../ui/Avatar";
+import { AvatarPicker, type AvatarChoice } from "../people/AvatarPicker";
 import { Button } from "../ui/Button";
 import { TextField } from "../ui/TextField";
 import s from "./SignInPage.module.scss";
@@ -18,6 +18,8 @@ export function OnboardingPage() {
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [realName, setRealName] = useState<string | null>(null);
   const [title, setTitle] = useState("");
+  const [avatar, setAvatar] = useState<AvatarChoice>(undefined);
+  const [uploading, setUploading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,7 +37,7 @@ export function OnboardingPage() {
     try {
       const user = await api<UserDto>("/me/onboarding", {
         method: "POST",
-        body: { displayName: name.trim(), realName: full.trim(), title: title.trim(), tz: browserTz },
+        body: { displayName: name.trim(), realName: full.trim(), title: title.trim(), tz: browserTz, ...(avatar && { avatarFileId: avatar }) },
       });
       upsertUser(user);
       updateBoot((b) => ({ ...b, me: user }));
@@ -50,9 +52,9 @@ export function OnboardingPage() {
     <main className={s.page}>
       <div className={s.card}>
         <form className={s.form} onSubmit={submit} noValidate>
-          <Avatar name={full || name || me.email} size="xl" />
           <h1 className={s.title}>Расскажите о себе</h1>
           <p className={s.lead}>Так коллеги поймут, кто пишет. Всё можно поменять потом в профиле.</p>
+          <AvatarPicker name={full || name || me.email} id={me.id} current={me.avatarUrl} onChange={setAvatar} onBusy={setUploading} />
           <TextField
             label="Как вас называть"
             autoFocus
@@ -65,7 +67,7 @@ export function OnboardingPage() {
           <TextField label="Имя и фамилия" maxLength={80} value={full} onChange={(e) => setRealName(e.target.value)} />
           <TextField label="Должность" maxLength={100} placeholder="например, дизайнер" value={title} onChange={(e) => setTitle(e.target.value)} />
           <p className={s.lead}>Часовой пояс: {browserTz}</p>
-          <Button type="submit" size="l" loading={busy} disabled={!name.trim()}>
+          <Button type="submit" size="l" loading={busy} disabled={!name.trim() || uploading}>
             Готово, в чат
           </Button>
         </form>

@@ -1,0 +1,30 @@
+@use "../styles/mixins" as *;
+
+.picker {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  min-width: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
+.hint {
+  color: var(--color-text-muted);
+  @include type(caption);
+}
+
+.error {
+  color: var(--color-danger-text);
+  @include type(caption);
+}

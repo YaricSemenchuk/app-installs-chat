@@ -272,6 +272,7 @@ function Conversation({ boot, conv }: { boot: BootDto; conv: ConversationDto }) 
       icon={conv.kind === "private" ? <Lock /> : <Hash />}
       topic={conv.topic || conv.purpose}
       members={conv.memberIds.map((id) => userName(boot, id))}
+      memberIds={conv.memberIds}
       onDetails={conv.isMember ? () => setDetails("about") : undefined}
       onMembers={conv.isMember ? () => setDetails("members") : undefined}
     />

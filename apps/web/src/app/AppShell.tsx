@@ -34,6 +34,7 @@ function dmEntry(boot: BootDto, c: ConversationDto): SidebarEntry {
   return {
     kind: "dm",
     name: conversationTitle(boot, c),
+    id: (other ?? boot.me).id,
     presence: other && isOnline(boot, other.id) ? "active" : "away",
     self: isSelfDm(boot, c),
   };
@@ -146,6 +147,7 @@ export function AppShell() {
     <div className={s.app}>
       <Titlebar
         me={displayOf(me)}
+        meId={me.id}
         activity={0}
         onSignOut={signOut}
         onProfile={() => setDialog("profile")}

@@ -10,7 +10,7 @@ import s from "./Sidebar.module.scss";
 
 export type SidebarEntry =
   | { kind: "channel"; name: string; private?: boolean }
-  | { kind: "dm"; name: string; presence?: Presence; self?: boolean }
+  | { kind: "dm"; name: string; id?: string; presence?: Presence; self?: boolean }
   | { kind: "group"; names: string[] }
   | { kind: "nav"; label: string; icon: ReactNode };
 
@@ -111,7 +111,7 @@ export function SidebarItem({ entry, state = {}, to }: { entry: SidebarEntry; st
     <>
         <span className={s.lead}>
           {entry.kind === "channel" && (entry.private ? <Lock /> : <Hash />)}
-          {entry.kind === "dm" && <Avatar name={entry.name} size="s" presence={entry.presence} decorative />}
+          {entry.kind === "dm" && <Avatar name={entry.name} id={entry.id} size="s" presence={entry.presence} decorative />}
           {entry.kind === "group" && (
             <span className={s.groupCount}>
               <Users />

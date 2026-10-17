@@ -108,6 +108,12 @@ export function useUploads() {
 
 export type Uploads = ReturnType<typeof useUploads>;
 
+// Один файл без композера — например, фото профиля.
+export async function uploadFile(file: File, onProgress: (p: number) => void = () => undefined): Promise<FileDto> {
+  const ticket = await api<UploadTicketDto>("/files", { method: "POST", body: { name: file.name || "фото", size: file.size, mimetype: file.type } });
+  return put(ticket.uploadUrl, file, onProgress, () => undefined);
+}
+
 function put(url: string, file: File, onProgress: (p: number) => void, onStart: (x: XMLHttpRequest) => void): Promise<FileDto> {
   return new Promise((resolve, reject) => {
     const x = new XMLHttpRequest();

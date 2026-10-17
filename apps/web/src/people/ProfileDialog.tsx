@@ -1,4 +1,4 @@
-// Свой профиль: имя в сообщениях, полное имя, должность, местоимения.
+// Свой профиль: фото, имя в сообщениях, полное имя, должность, местоимения.
 import { useState } from "react";
 import type { UserDto } from "@teamchat/shared";
 import { api } from "../api/http";
@@ -6,9 +6,12 @@ import { updateBoot, upsertUser } from "../data/boot";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { TextField } from "../ui/TextField";
+import { AvatarPicker, type AvatarChoice } from "./AvatarPicker";
 
 export function ProfileDialog({ me, open, onOpenChange }: { me: UserDto; open: boolean; onOpenChange: (v: boolean) => void }) {
   const [form, setForm] = useState({ displayName: me.displayName, realName: me.realName, title: me.title, pronouns: me.pronouns });
+  const [avatar, setAvatar] = useState<AvatarChoice>(undefined);
+  const [uploading, setUploading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const set = (k: keyof typeof form) => (e: { target: { value: string } }) => setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -17,7 +20,7 @@ export function ProfileDialog({ me, open, onOpenChange }: { me: UserDto; open: b
     setBusy(true);
     setError(null);
     try {
-      const user = await api<UserDto>("/me/profile", { method: "PATCH", body: { ...form, tz: Intl.DateTimeFormat().resolvedOptions().timeZone } });
+      const user = await api<UserDto>("/me/profile", { method: "PATCH", body: { ...form, ...(avatar !== undefined && { avatarFileId: avatar }), tz: Intl.DateTimeFormat().resolvedOptions().timeZone } });
       upsertUser(user);
       updateBoot((b) => ({ ...b, me: user }));
       onOpenChange(false);
@@ -32,7 +35,12 @@ export function ProfileDialog({ me, open, onOpenChange }: { me: UserDto; open: b
     <Dialog
       open={open}
       onOpenChange={(v) => {
-        if (v) setForm({ displayName: me.displayName, realName: me.realName, title: me.title, pronouns: me.pronouns });
+        if (v) {
+          setForm({ displayName: me.displayName, realName: me.realName, title: me.title, pronouns: me.pronouns });
+          setAvatar(undefined);
+          setUploading(false);
+          setError(null);
+        }
         onOpenChange(v);
       }}
       title="Профиль"
@@ -41,12 +49,13 @@ export function ProfileDialog({ me, open, onOpenChange }: { me: UserDto; open: b
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Отмена
           </Button>
-          <Button onClick={save} loading={busy} disabled={!form.displayName.trim()}>
+          <Button onClick={save} loading={busy} disabled={!form.displayName.trim() || uploading}>
             Сохранить
           </Button>
         </>
       }
     >
+      <AvatarPicker name={form.realName || form.displayName || me.email} id={me.id} current={me.avatarUrl} onChange={setAvatar} onBusy={setUploading} />
       <TextField label="Как вас называть" maxLength={80} value={form.displayName} onChange={set("displayName")} error={error ?? undefined} />
       <TextField label="Имя и фамилия" maxLength={80} value={form.realName} onChange={set("realName")} />
       <TextField label="Должность" maxLength={100} value={form.title} onChange={set("title")} />

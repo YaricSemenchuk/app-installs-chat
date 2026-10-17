@@ -16,6 +16,18 @@ export function useBoot() {
   return useQuery({ queryKey: bootKey, queryFn: () => api<BootDto>("/boot"), staleTime: Infinity });
 }
 
+// Адрес фото человека по id; null — фото нет или это не пользователь. Только читает кеш boot.
+export function useAvatarUrl(id: string | undefined): string | null {
+  const { data } = useQuery({
+    queryKey: bootKey,
+    queryFn: () => api<BootDto>("/boot"),
+    staleTime: Infinity,
+    enabled: false,
+    select: (b) => (id ? ((b.me.id === id ? b.me : b.users.find((u) => u.id === id))?.avatarUrl ?? null) : null),
+  });
+  return data ?? null;
+}
+
 export function getBoot(): BootDto | undefined {
   return queryClient.getQueryData<BootDto>(bootKey);
 }

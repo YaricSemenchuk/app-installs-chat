@@ -8,6 +8,7 @@ import s from "./Titlebar.module.scss";
 
 type Props = {
   me: string;
+  meId?: string;
   activity: number;
   onSignOut?: () => void;
   onProfile?: () => void;
@@ -17,7 +18,7 @@ type Props = {
 
 const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
 
-export function Titlebar({ me, activity, onSignOut, onProfile, onPreferences, onSearch }: Props) {
+export function Titlebar({ me, meId, activity, onSignOut, onProfile, onPreferences, onSearch }: Props) {
   return (
     <header className={s.titlebar}>
       <div className={s.nav}>
@@ -47,7 +48,7 @@ export function Titlebar({ me, activity, onSignOut, onProfile, onPreferences, on
         <Menu
           trigger={
             <button type="button" className={s.me} aria-label={`${me}: профиль и настройки`}>
-              <Avatar name={me} size="m" presence="active" decorative />
+              <Avatar name={me} id={meId} size="m" presence="active" decorative />
             </button>
           }
           items={[

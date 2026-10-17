@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, MouseEvent, ReactNode } from "react";
+import type { ButtonHTMLAttributes, MouseEvent, ReactNode, Ref } from "react";
 import { cx } from "../lib/cx";
 import { Spinner } from "./Spinner";
 import s from "./Button.module.scss";
@@ -10,6 +10,7 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
   size?: "s" | "m" | "l";
   icon?: ReactNode;
   loading?: boolean;
+  ref?: Ref<HTMLButtonElement>; // React 19: доходит до <button> через rest
 };
 
 // Во время загрузки кнопку не делаем disabled: браузер снял бы с неё фокус в никуда (body),

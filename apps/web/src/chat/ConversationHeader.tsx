@@ -10,6 +10,7 @@ export function ConversationHeader({
   icon = <Hash />,
   topic,
   members,
+  memberIds,
   pins,
   bookmark,
   onDetails,
@@ -19,6 +20,7 @@ export function ConversationHeader({
   icon?: ReactNode;
   topic: string;
   members?: string[];
+  memberIds?: string[];
   pins?: number;
   bookmark?: string;
   onDetails?: () => void;
@@ -51,7 +53,7 @@ export function ConversationHeader({
         <div className={s.actions}>
           {members && (
             <button type="button" className={s.members} aria-label={`Участники: ${members.length}`} onClick={onMembers}>
-              <AvatarStack names={members} />
+              <AvatarStack names={members} ids={memberIds} />
               <span>{members.length}</span>
             </button>
           )}
