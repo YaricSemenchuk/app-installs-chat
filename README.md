@@ -82,6 +82,41 @@ Google на 3299 — dev-сервер для них не нужен. Тольк�
 | `BUCKET_ENDPOINT`, `BUCKET_NAME`, `BUCKET_ACCESS_KEY_ID`, `BUCKET_SECRET_ACCESS_KEY` | из учётных данных бакета (вкладка Credentials); удобнее сослаться на переменные бакета через `${{…}}` |
 | `BUCKET_REGION` | регион из учётных данных, по умолчанию `auto` |
 | `BUCKET_FORCE_PATH_STYLE` | `true`, если хранилище не поддерживает адреса вида `bucket.host` |
+| `DESKTOP_VERSION`, `DESKTOP_MAC_URL`, `DESKTOP_WIN_URL` | необязательно: последняя версия приложения и ссылки на установщики — для страницы `/download` и баннера «вышла новая версия» |
 
 `PORT` Railway задаёт сам. Файлы загружаются через API потоком (CORS у бакета настраивать не нужно), а
 скачиваются по подписанной ссылке на 5 минут после проверки доступа.
+
+## Десктоп-приложение
+
+`apps/desktop` — оболочка на Electron: окно грузит чат с сервера (интерфейс обновляется без переустановки),
+плюс значок с непрочитанным, системные уведомления, трей, ссылки `teamchat://…` и вход через Google в системном
+браузере. Это отдельный npm-проект со своим `package-lock.json`, в образ сервера он не попадает.
+
+Запуск в разработке (чат на `npm run dev`, оболочка смотрит на `http://localhost:5173`):
+
+```bash
+npm --prefix apps/desktop install
+npm run desktop
+```
+
+Установщики без подписи. Адрес чата вшивается в сборку переменной `TEAMCHAT_URL` (только https):
+
+```bash
+cd apps/desktop
+TEAMCHAT_URL=https://chat.example.com npm run dist:mac
+```
+
+Получится `apps/desktop/release/PromobileChat-<версия>-mac.dmg` (универсальный: Apple Silicon и Intel).
+Установщик для Windows (`dist:win`) собирается на Windows или в GitHub Actions: workflow `desktop` собирает оба,
+адрес берёт из переменной репозитория `TEAMCHAT_URL`. На Mac с Apple Silicon `dist:win` падает с ошибкой
+`-86`: NSIS-сборщику нужен Rosetta.
+
+Чтобы люди узнали о новой версии, выложите установщики (Release на GitHub или бакет) и задайте на Railway
+`DESKTOP_VERSION`, `DESKTOP_MAC_URL`, `DESKTOP_WIN_URL`: появятся ссылки на `/download`, а в старых версиях —
+баннер. Версия берётся из `apps/desktop/package.json`.
+
+Вход через Google в приложении использует тот же OAuth-клиент: браузер после входа открывает страницу
+`/desktop-auth`, та передаёт одноразовый код в приложение. Код без секрета, который знает только
+запустившее вход приложение, бесполезен.
+

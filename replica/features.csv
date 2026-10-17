@@ -83,13 +83,13 @@ feature,area,priority,original,clone,notes
 Свои представления Activity,activity,could,yes,no,
 Сохранить сообщение на потом,saved,should,yes,no,S25; у Slack теперь Saved и To-dos
 Напоминание о сообщении и /remind,saved,should,yes,no,S42
-Десктоп-уведомления о ЛС / упоминаниях / ответах в тредах,notifications,must,yes,no,S41
-Глобальный уровень уведомлений: всё / упоминания и ЛС,notifications,must,yes,no,S34
+Десктоп-уведомления о ЛС / упоминаниях / ответах в тредах,notifications,must,yes,yes,"M5: решение на сервере в одном месте, эфемерное событие в комнату человека; клиент молчит, если смотрит на этот разговор или тред; браузерные и системные (Electron)"
+Глобальный уровень уведомлений: всё / упоминания и ЛС,notifications,must,yes,yes,"M5: S34 всё / ЛС, упоминания и треды / ничего; расходится по устройствам событием"
 Уведомления на разговор: все / упоминания / mute,notifications,should,yes,no,S35
 Пауза уведомлений (DND) на время,notifications,should,yes,no,S33
 Расписание уведомлений (рабочие часы),notifications,could,yes,no,
 Ключевые слова для уведомлений,notifications,could,yes,no,
-Звук и превью текста в уведомлении,notifications,could,yes,no,
+Звук и превью текста в уведомлении,notifications,could,yes,yes,"M5: свой короткий звук из двух тонов (WebAudio), текст можно скрыть"
 Браузерный push при закрытой вкладке,notifications,could,yes,no,web push через service worker
 Присутствие active / away с авто-away через 10 минут,presence,must,yes,yes,"M1: в памяти сервера, сигнал active от клиента раз в минуту"
 Ручной режим away,presence,could,yes,no,
@@ -98,14 +98,14 @@ feature,area,priority,original,clone,notes
 Индикатор «печатает…»,realtime,should,yes,no,
 Новые сообщения появляются без перезагрузки,realtime,must,yes,yes,M0: socket.io
 Переподключение и догрузка пропущенного после обрыва,realtime,must,yes,yes,"M0: журнал events, hello{lastEventId}, баннер S43"
-Правки / удаления / реакции синхронизируются в реальном времени,realtime,must,yes,no,
-Десктоп-приложение Electron для macOS и Windows,desktop,must,yes,no,
-Бейдж непрочитанного на иконке приложения,desktop,must,yes,no,
-Работа в трее / меню-баре при закрытом окне,desktop,should,yes,no,
-Диплинки на канал / ЛС / сообщение,desktop,should,yes,no,F25; своя URL-схема
-Автообновление десктоп-приложения,desktop,should,yes,no,
+Правки / удаления / реакции синхронизируются в реальном времени,realtime,must,yes,yes,"M3: события message.updated / message.deleted / reaction.* и сводки тредов, догон после обрыва; e2e и проверка вживую"
+Десктоп-приложение Electron для macOS и Windows,desktop,must,yes,partial,"M5: macOS собран (.dmg, universal) и проверен; Windows — в GitHub Actions, ещё не запускался"
+Бейдж непрочитанного на иконке приложения,desktop,must,yes,yes,"M5: Dock на macOS, метка на значке в Windows, (N) в заголовке вкладки; те же числа, что в сайдбаре"
+Работа в трее / меню-баре при закрытом окне,desktop,should,yes,yes,"M5: закрытие прячет окно, меню трея — открыть, автозапуск, выйти"
+Диплинки на канал / ЛС / сообщение,desktop,should,yes,yes,"M5: teamchat://channel?id=, message?id= (в том числе ответ в треде), один экземпляр приложения"
+Автообновление десктоп-приложения,desktop,should,yes,partial,"M5: интерфейс обновляется сам; о новой версии оболочки — баннер со ссылкой на /download, ставится вручную"
 Подписанные сборки (macOS нотаризация / Windows),desktop,should,yes,no,нужен Apple Developer
-Автозапуск при входе в систему,desktop,could,yes,no,
+Автозапуск при входе в систему,desktop,could,yes,yes,M5: флажок в меню трея
 Отдельное окно для треда или разговора,desktop,could,yes,no,
 Редактировать последнее сообщение по ↑,keyboard,should,yes,no,
 Навигация: ⌥↑/↓ по сайдбару и ⌥⇧↑/↓ по непрочитанному,keyboard,could,yes,no,

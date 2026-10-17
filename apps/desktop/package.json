@@ -1,0 +1,70 @@
+{
+  "name": "teamchat-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Десктоп-оболочка чата команды: окно с веб-клиентом, бейдж, уведомления, трей, teamchat://",
+  "author": "Promobile",
+  "main": "dist/main.js",
+  "scripts": {
+    "postinstall": "node node_modules/electron/install.js",
+    "build": "tsc -p tsconfig.json && node scripts/write-config.mjs",
+    "start": "npm run build && electron .",
+    "dist:mac": "npm run build && electron-builder --mac --publish never",
+    "dist:win": "npm run build && electron-builder --win --publish never"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "electron": "44.5.1",
+    "electron-builder": "26.17.0",
+    "typescript": "6.0.3"
+  },
+  "build": {
+    "appId": "app.promobile.chat",
+    "productName": "Promobile Chat",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**",
+      "assets/**",
+      "package.json"
+    ],
+    "protocols": [
+      {
+        "name": "Promobile Chat",
+        "schemes": [
+          "teamchat"
+        ]
+      }
+    ],
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
+      "icon": "build/icon-mac.png",
+      "category": "public.app-category.business",
+      "identity": null
+    },
+    "dmg": {
+      "title": "Promobile Chat ${version}"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "shortcutName": "Promobile Chat"
+    },
+    "artifactName": "PromobileChat-${version}-${os}.${ext}"
+  }
+}

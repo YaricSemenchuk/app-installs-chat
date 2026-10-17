@@ -3,7 +3,8 @@
   "private": true,
   "workspaces": [
     "packages/*",
-    "apps/*"
+    "apps/api",
+    "apps/web"
   ],
   "scripts": {
     "tokens": "node scripts/build-tokens.mjs",
@@ -14,7 +15,8 @@
     "typecheck": "npm run build -w @teamchat/shared && npm run typecheck --workspaces --if-present",
     "test:e2e": "npm run test:e2e -w @teamchat/api",
     "emoji": "node scripts/build-emoji.mjs",
-    "test": "npm run test -w @teamchat/shared && npm run test:e2e"
+    "test": "npm run test -w @teamchat/shared && npm run test:e2e",
+    "desktop": "npm --prefix apps/desktop start"
   },
   "devDependencies": {
     "concurrently": "^10.0.6"
