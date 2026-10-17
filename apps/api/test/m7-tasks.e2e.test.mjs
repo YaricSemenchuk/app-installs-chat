@@ -63,6 +63,11 @@ function searchJira(jql) {
   if (project && !["DEV", "BIG"].includes(project)) return { error: `The value '${project}' does not exist for the field 'project'.` };
   let found = issues.filter((i) => (!project || i.key.startsWith(`${project}-`)) && (!assignee || i.fields.assignee?.accountId === assignee));
   if (/statusCategory\s*!=\s*Done/i.test(jql)) found = found.filter((i) => i.fields.status.statusCategory.key !== "done");
+  const hidden = jql.match(/status NOT IN \(([^)]*)\)/)?.[1];
+  if (hidden) {
+    const names = [...hidden.matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+    found = found.filter((i) => !names.includes(i.fields.status.name));
+  }
   const rank = (i) => Number(i.fields.priority?.id ?? 9);
   return { found: [...found].sort((a, b) => rank(a) - rank(b)) };
 }
@@ -94,6 +99,9 @@ const jira = createServer((req, res) => {
       if (!canBrowseUsers) return json(res, 200, []);
       const a = accounts.get(url.searchParams.get("query"));
       return json(res, 200, a ? [user(a.accountId, a.name, a.showEmail ? url.searchParams.get("query") : undefined)] : []);
+    }
+    if (url.pathname === "/rest/api/3/status") {
+      return json(res, 200, ["To Do", "In Progress", "Done", "VERIFY PROD", "Verify PROD"].map((name, i) => ({ id: String(i + 1), name })));
     }
     if (url.pathname === "/rest/api/3/project/search") {
       return json(res, 200, { values: [{ key: "DEV", name: "Development", avatarUrls: { "48x48": "https://avatar.example/dev.png" } }] });
@@ -171,6 +179,7 @@ describe("M7 tasks from Jira and Figma", () => {
       }),
       issue("DEV-2", "Highest", "To Do", "new", user("557058:boris", "Boris Jira", borisEmail)),
       issue("DEV-4", "Highest", "Done", "done", user("557058:anna", "Anna Jira")),
+      issue("DEV-5", "Highest", "VERIFY PROD", "new", user("557058:anna", "Anna Jira")),
       ...Array.from({ length: 250 }, (_, i) => issue(`BIG-${i + 1}`, "Medium", "To Do", "new", null)),
     ];
     channel = (await call(anna, "POST", "/api/conversations", { name: `tasks-${run}`, memberIds: [borisId] })).body;
@@ -250,7 +259,8 @@ describe("M7 tasks from Jira and Figma", () => {
     assert.equal(res.status, 200, JSON.stringify(res.body));
     // Сортировку канала сервер заменяет своей и сам отсекает завершённые.
     const sent = jiraLog.filter((r) => r.path === "/rest/api/3/search/jql").at(-1).body;
-    assert.equal(sent.jql, "(project = DEV) AND statusCategory != Done ORDER BY priority DESC, updated DESC");
+    // Скрытые статусы — с названиями, как в Jira (все варианты регистра); несуществующий из настройки пропущен.
+    assert.equal(sent.jql, '(project = DEV) AND statusCategory != Done AND status NOT IN ("VERIFY PROD", "Verify PROD") ORDER BY priority DESC, updated DESC');
     assert.ok(sent.fields.includes("description"));
 
     const { source, jira: list, figma: design } = res.body;
@@ -321,7 +331,7 @@ describe("M7 tasks from Jira and Figma", () => {
       ["DEV-1"],
     );
     const sent = jiraLog.filter((r) => r.path === "/rest/api/3/search/jql").at(-1).body;
-    assert.equal(sent.jql, 'assignee = "557058:anna" AND statusCategory != Done ORDER BY priority DESC, updated DESC');
+    assert.equal(sent.jql, 'assignee = "557058:anna" AND statusCategory != Done AND status NOT IN ("VERIFY PROD", "Verify PROD") ORDER BY priority DESC, updated DESC');
     assert.ok(jiraLog.some((r) => r.path === "/rest/api/3/user/search" && r.query.includes(encodeURIComponent("anna9."))));
 
     const nobody = await call(carl, "GET", "/api/me/tasks");
