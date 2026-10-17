@@ -49,3 +49,15 @@
   background: var(--color-accent);
   @include transition(width);
 }
+
+// Телефон: описание во всю ширину, кнопки под ним.
+@include mobile {
+  .row {
+    flex-wrap: wrap;
+  }
+
+  .actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}

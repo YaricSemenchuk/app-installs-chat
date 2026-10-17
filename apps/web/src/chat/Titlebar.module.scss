@@ -78,3 +78,30 @@
   background: transparent;
   cursor: pointer;
 }
+
+.home {
+  display: none;
+}
+
+// Телефон: «к списку» слева, поиск растягивается, стрелки истории и подсказка клавиш не нужны.
+@include mobile {
+  .titlebar {
+    grid-template-columns: auto 1fr auto;
+    gap: var(--space-8);
+    padding: 0 var(--space-8);
+  }
+
+  .home {
+    display: flex;
+  }
+
+  .nav,
+  .kbd {
+    display: none;
+  }
+
+  // Без кнопки «к списку» поиск встаёт в первую колонку.
+  .titlebar:not(:has(.home)) {
+    grid-template-columns: 1fr auto;
+  }
+}

@@ -14,6 +14,7 @@ import {
   type InstallerDto,
 } from "@teamchat/shared";
 import { api } from "../api/http";
+import { cx } from "../lib/cx";
 import { queryClient, useBoot, userName } from "../data/boot";
 import { formatBytes } from "../files/kind";
 import { putBytes } from "../files/uploads";
@@ -119,7 +120,7 @@ export function InstallersPage() {
           {PLATFORMS.map(({ id, label, icon }) => {
             const it = info.data?.[id] ?? null;
             return (
-              <li key={id} className={p.invite}>
+              <li key={id} className={cx(p.invite, s.row)}>
                 <span className={s.platform}>
                   <span className={s.icon}>{icon}</span>
                   <span className={p.personText}>

@@ -15,6 +15,9 @@ import { createStore, type StoreApi } from "zustand/vanilla";
 import { SAFE_URL_RE } from "@teamchat/shared";
 import type { MentionKind } from "./doc";
 
+// Только сенсорный экран без мыши: телефон или планшет.
+const touchOnly = () => window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+
 // ───────────── подсказки @ # : ─────────────
 
 export type SuggestItem =
@@ -236,17 +239,19 @@ export function composerExtensions(placeholder: string, hooks: () => EditorHooks
       priority: 1000,
       addKeyboardShortcuts() {
         const busy = () => popupBusy(h().popup);
+        const newline = ({ editor }: { editor: Editor }) => {
+          if (busy()) return false;
+          if (editor.isActive("codeBlock")) return editor.commands.newlineInCode();
+          if (editor.isActive("listItem")) {
+            return editor.commands.first(({ commands }) => [() => commands.splitListItem("listItem"), () => commands.liftListItem("listItem")]);
+          }
+          return editor.commands.first(({ commands }) => [() => commands.liftEmptyBlock(), () => commands.splitBlock()]);
+        };
         return {
-          Enter: ({ editor }) => (busy() || editor.isActive("codeBlock") ? false : h().submit()),
+          // На телефоне Enter экранной клавиатуры — новая строка, отправляют кнопкой, как в мессенджерах.
+          Enter: ({ editor }) => (touchOnly() ? newline({ editor }) : busy() || editor.isActive("codeBlock") ? false : h().submit()),
           "Mod-Enter": () => (busy() ? false : h().submit()),
-          "Shift-Enter": ({ editor }) => {
-            if (busy()) return false;
-            if (editor.isActive("codeBlock")) return editor.commands.newlineInCode();
-            if (editor.isActive("listItem")) {
-              return editor.commands.first(({ commands }) => [() => commands.splitListItem("listItem"), () => commands.liftListItem("listItem")]);
-            }
-            return editor.commands.first(({ commands }) => [() => commands.liftEmptyBlock(), () => commands.splitBlock()]);
-          },
+          "Shift-Enter": newline,
           Escape: () => (busy() ? false : h().cancel()),
           ArrowUp: ({ editor }) => (!busy() && editor.isEmpty ? h().editLast() : false),
           "Mod-Shift-u": () => h().openLink(),

@@ -132,6 +132,13 @@
 .actions {
   text-align: right;
   white-space: nowrap;
+
+  // Телефон: у кнопок остаются иконки, подпись — для скринридера.
+  @include mobile {
+    button > span:last-child {
+      @include visually-hidden;
+    }
+  }
 }
 
 .section {
@@ -290,4 +297,16 @@
   position: absolute;
   top: 0;
   right: 0;
+}
+
+// Телефон: первая колонка забирает остаток ширины, длинные имя и почта обрезаются многоточием.
+@include mobile {
+  .table td:first-child {
+    width: 100%;
+    max-width: 0;
+  }
+
+  .personText > span {
+    @include truncate;
+  }
 }

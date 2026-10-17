@@ -19,15 +19,19 @@ import { PeoplePage } from "../people/PeoplePage";
 import { SearchPage } from "../search/SearchPage";
 import { AppShell } from "./AppShell";
 import { RouteError } from "../pages/RouteError";
+import { useIsMobile } from "../lib/useMobile";
 
 // Главная: туда, откуда отправили на вход (например, /download), иначе в #general.
+// На телефоне главная — это список разговоров (его показывает AppShell), никуда не переходим.
 function OpenDefaultConversation() {
   const boot = useBoot().data;
+  const mobile = useIsMobile();
   const back = pendingReturn();
   useEffect(() => {
     if (back) clearReturn();
   }, [back]);
   if (back) return <Navigate to={back} replace />;
+  if (mobile) return null;
   const general = boot?.conversations.find((c) => c.isGeneral) ?? boot?.conversations[0];
   return general ? <Navigate to={`/c/${general.id}`} replace /> : null;
 }

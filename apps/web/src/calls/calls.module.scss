@@ -226,3 +226,25 @@
     height: 14px;
   }
 }
+
+@include mobile {
+  .window {
+    inset: 0;
+    width: auto;
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .tiles {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+
+  .incoming {
+    top: max(var(--space-8), env(safe-area-inset-top));
+    right: var(--space-8);
+    width: calc(100vw - var(--space-16));
+  }
+}

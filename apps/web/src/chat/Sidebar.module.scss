@@ -196,3 +196,12 @@
 .collapsed {
   transform: rotate(-90deg);
 }
+
+@include mobile {
+  .sidebar {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    border-right: 0;
+  }
+}

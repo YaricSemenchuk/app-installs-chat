@@ -88,3 +88,17 @@
     background: var(--color-surface-hover);
   }
 }
+
+@include mobile {
+  .header {
+    padding: 0 var(--space-12);
+  }
+
+  .top {
+    gap: var(--space-8);
+  }
+
+  .topic {
+    display: none;
+  }
+}

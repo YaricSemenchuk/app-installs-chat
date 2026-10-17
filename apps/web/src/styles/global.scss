@@ -12,6 +12,28 @@ body,
   height: 100%;
 }
 
+// На телефоне 100% высоты — это экран вместе со спрятанной адресной строкой; dvh — видимая часть.
+@supports (height: 100dvh) {
+  #root {
+    height: 100dvh;
+  }
+}
+
+@include mobile {
+  :root {
+    --layout-message-gutter: var(--space-12);
+    --size-sidebar-item: var(--size-control-l); // строки списка — под палец, а не под мышь
+  }
+
+  // iOS приближает страницу, если у поля ввода шрифт меньше 16px.
+  input,
+  textarea,
+  select,
+  [contenteditable="true"] {
+    font-size: max(16px, 1em);
+  }
+}
+
 body {
   margin: 0;
   font-family: var(--font-sans);

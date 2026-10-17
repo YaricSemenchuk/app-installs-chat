@@ -1,6 +1,6 @@
 // S03 — каркас: заголовок окна, сайдбар, баннер соединения, текущий экран.
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
-import { Navigate, Outlet, useNavigate, useParams } from "react-router";
+import { Navigate, Outlet, useLocation, useNavigate, useParams } from "react-router";
 import { Bookmark, Compass, Download, FileStack, Hash, MessageSquareText, MonitorDown, Plus, SendHorizontal, UserPlus, Users } from "lucide-react";
 import { isAdminRole, isChannelKind, type BootDto, type ConversationDto } from "@teamchat/shared";
 import { api, isUnauthorized } from "../api/http";
@@ -59,6 +59,7 @@ function dmEntry(boot: BootDto, c: ConversationDto): SidebarEntry {
 export function AppShell() {
   const boot = useBoot();
   const navigate = useNavigate();
+  const location = useLocation();
   const { conversationId } = useParams();
   const status = useConnection((x) => x.status);
   const calls = useCalls((x) => x.byConversation);
@@ -169,11 +170,15 @@ export function AppShell() {
     navigate("/signin", { replace: true });
   }
 
+  // Телефон: на «/» — список разговоров, на любой другой странице — она сама и кнопка «к списку».
+  const view = location.pathname === "/" ? "list" : "main";
+
   return (
-    <div className={s.app}>
+    <div className={s.app} data-view={view}>
       <Titlebar
         me={displayOf(me)}
         meId={me.id}
+        onHome={view === "main" ? () => navigate("/") : undefined}
         activity={0}
         onSignOut={signOut}
         onProfile={() => setDialog("profile")}
@@ -181,6 +186,7 @@ export function AppShell() {
         onSearch={() => setDialog("search")}
       />
       <div className={s.body}>
+        <div className={s.side}>
         <Sidebar workspace={workspace.name} menu={workspaceMenu.length > 0 ? workspaceMenu : undefined} onCompose={() => setDialog("message")}>
           <ul className={s.navList}>
             <SidebarItem entry={{ kind: "nav", label: "Треды", icon: <MessageSquareText /> }} to="/threads" />
@@ -228,6 +234,7 @@ export function AppShell() {
             </ul>
           )}
         </Sidebar>
+        </div>
         <main className={s.main}>
           {(status === "reconnecting" || status === "offline" || status === "restored") && <ConnectionBanner state={status} />}
           {!desktop && <NotifyBanner prefs={data.preferences} />}

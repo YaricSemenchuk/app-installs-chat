@@ -85,3 +85,25 @@
     transform: translate(-50%, calc(-50% + 8px));
   }
 }
+
+// Телефон: окно у верхнего края — экранная клавиатура снизу не закроет поле ввода.
+@include mobile {
+  .floating {
+    top: max(var(--space-16), env(safe-area-inset-top));
+    width: calc(100% - var(--space-16));
+    transform: translateX(-50%);
+    animation-name: appear-top;
+  }
+
+  .surface {
+    max-height: calc(100dvh - var(--space-32));
+    padding: var(--space-16);
+  }
+}
+
+@keyframes appear-top {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+}

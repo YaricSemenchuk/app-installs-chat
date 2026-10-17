@@ -34,3 +34,10 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+// Телефон: один экран за раз (список или разговор), всё остальное — во весь экран. Ширина та же, что в useIsMobile.
+@mixin mobile {
+  @media (max-width: 767px) {
+    @content;
+  }
+}

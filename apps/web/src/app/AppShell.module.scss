@@ -84,3 +84,24 @@
     color: var(--color-text-muted);
   }
 }
+
+// Обёртка сайдбара: на компьютере не влияет на раскладку, на телефоне — экран списка разговоров.
+.side {
+  display: contents;
+}
+
+@include mobile {
+  .app[data-view="list"] .main {
+    display: none;
+  }
+
+  .app[data-view="list"] .side {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .app[data-view="main"] .side {
+    display: none;
+  }
+}
