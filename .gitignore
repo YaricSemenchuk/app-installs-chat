@@ -10,3 +10,4 @@ apps/web/src/styles/tokens.css
 apps/api/src/generated/
 .storage/
 .storage-test/
+.e2e-sessions.json

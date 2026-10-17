@@ -3,6 +3,7 @@ import { PrismaService } from "../db/prisma.service.js";
 import type { invites, users } from "../generated/prisma/client.js";
 import { MembershipService } from "../conversations/membership.service.js";
 import { InvitesService } from "../invites/invites.service.js";
+import { createHash } from "node:crypto";
 import { hashLoginCode, newLoginCode, newSessionToken, sameBytes, sha256 } from "./crypto.js";
 import { MailService } from "./mail.service.js";
 
@@ -20,6 +21,8 @@ export type GoogleProfile = { sub: string; email: string; name: string };
 // Кто может войти без существующего аккаунта: по приглашению (персональному — только своему адресу)
 // или с разрешённого домена. Деактивированных не пускает никто, кроме администратора, вернувшего доступ.
 export class AccessDenied extends ForbiddenException {}
+
+const HANDOFF_TTL_MS = 60_000;
 
 @Injectable()
 export class AuthService {
@@ -112,8 +115,35 @@ export class AuthService {
     return { token: await this.createSession(user.id, meta), user };
   }
 
-  // Google: аккаунт ищем по sub, потом по почте (и привязываем sub), иначе создаём по приглашению или домену.
   async signInWithGoogle(profile: GoogleProfile, inviteToken: string | undefined, meta: SessionMeta) {
+    const user = await this.googleUser(profile, inviteToken);
+    return { token: await this.createSession(user.id, meta), user };
+  }
+
+  // Вход в десктоп-приложение: вместо сессии в браузере — одноразовый код на минуту, который приложение
+  // обменяет на сессию вместе с verifier (его хэш пришёл на /auth/google/start).
+  async googleHandoff(profile: GoogleProfile, inviteToken: string | undefined, challenge: string): Promise<string> {
+    const user = await this.googleUser(profile, inviteToken);
+    const code = newSessionToken();
+    await this.prisma.auth_handoffs.create({
+      data: { user_id: user.id, code_hash: sha256(code), challenge, expires_at: new Date(Date.now() + HANDOFF_TTL_MS) },
+    });
+    return code;
+  }
+
+  async exchangeHandoff(code: string, verifier: string, meta: SessionMeta) {
+    const invalid = () => new BadRequestException("Ссылка для входа устарела. Войдите в приложении ещё раз");
+    const row = await this.prisma.auth_handoffs.findUnique({ where: { code_hash: sha256(code) }, include: { users: true } });
+    if (!row || row.consumed_at || row.expires_at < new Date() || row.users.deactivated_at) throw invalid();
+    const challenge = createHash("sha256").update(verifier).digest("base64url");
+    if (!sameBytes(Buffer.from(challenge), Buffer.from(row.challenge))) throw invalid();
+    const consumed = await this.prisma.auth_handoffs.updateMany({ where: { id: row.id, consumed_at: null }, data: { consumed_at: new Date() } });
+    if (consumed.count !== 1) throw invalid();
+    return { token: await this.createSession(row.user_id, meta), user: row.users };
+  }
+
+  // Google: аккаунт ищем по sub, потом по почте (и привязываем sub), иначе создаём по приглашению или домену.
+  private async googleUser(profile: GoogleProfile, inviteToken: string | undefined): Promise<users> {
     let user = await this.prisma.users.findUnique({ where: { google_sub: profile.sub } });
     if (!user) {
       const byEmail = await this.prisma.users.findUnique({ where: { email: profile.email } });
@@ -134,7 +164,7 @@ export class AuthService {
       }
     }
     if (user.deactivated_at) throw new AccessDenied("Доступ к этому аккаунту отключён");
-    return { token: await this.createSession(user.id, meta), user };
+    return user;
   }
 
   private async findOrCreate(email: string, opts: { inviteId?: string }): Promise<users> {

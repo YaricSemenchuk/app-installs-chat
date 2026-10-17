@@ -80,10 +80,10 @@ create trigger users_updated_at before update on users
 create table user_preferences (
   user_id uuid primary key references users (id) on delete cascade,
   notify_level text not null default 'mentions'
-    check (notify_level in ('all', 'mentions')),                -- «Notify me about»
+    check (notify_level in ('all', 'mentions', 'nothing')),     -- «Notify me about»
   notify_keywords text[] not null default '{}',
   desktop_notifications boolean not null default true,
-  notification_sound text not null default 'default',
+  notification_sound text not null default 'default' check (notification_sound in ('default', 'none')),
   show_message_preview boolean not null default true,
   notify_thread_replies boolean not null default true,
   -- рабочие часы уведомлений: {"days":[1,2,3,4,5],"from":"09:00","to":"19:00"}; null = всегда
@@ -136,6 +136,7 @@ create table auth_handoffs (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references users (id) on delete cascade,
   code_hash bytea not null unique,
+  challenge text not null,                                      -- S256(verifier) от десктоп-приложения
   expires_at timestamptz not null,                              -- ~60 секунд
   consumed_at timestamptz,
   created_at timestamptz not null default now()

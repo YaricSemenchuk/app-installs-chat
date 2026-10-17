@@ -20,6 +20,7 @@ import { PrismaService, type Tx } from "../db/prisma.service.js";
 import type { conversations, messages, users } from "../generated/prisma/client.js";
 import { EventsService } from "../realtime/events.service.js";
 import { RealtimeHub } from "../realtime/hub.service.js";
+import { NotificationsService } from "../notifications/notifications.service.js";
 import { PresenceService } from "../realtime/presence.service.js";
 import { assertCanPost, assertMember, isAdmin, isChannel, loadAccess, type Access } from "./access.js";
 import { MESSAGE_INCLUDE } from "./message-include.js";
@@ -50,6 +51,7 @@ export class MessagesService {
     private readonly events: EventsService,
     private readonly hub: RealtimeHub,
     private readonly presence: PresenceService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async list(me: users, conversationId: string, q: { before?: number; after?: number; limit: number }): Promise<MessagesPageDto> {
@@ -196,7 +198,10 @@ export class MessagesService {
       return { message, events };
     });
 
-    if (result.events.length > 0) this.hub.publish(result.events);
+    if (result.events.length > 0) {
+      this.hub.publish(result.events);
+      this.notifications.afterMessage(result.message, access.conv, new Set(mentions.keys()));
+    }
     return result.message;
   }
 

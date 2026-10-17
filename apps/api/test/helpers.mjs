@@ -1,6 +1,6 @@
 // Общие помощники e2e: HTTP-вызовы, вход по коду из .dev-mail.log, сокеты.
 import { randomUUID } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import assert from "node:assert/strict";
 import { io } from "socket.io-client";
@@ -57,7 +57,36 @@ export async function requestCode(email, inviteToken) {
   return lastMailTo(email, since);
 }
 
+// Сессии без приглашения переиспользуются между файлами тестов: на один адрес — не больше 5 кодов
+// за 15 минут, а владелец входит в каждом файле. Кеш живёт один запуск (см. run.mjs).
+const SESSION_CACHE = process.env.E2E_SESSION_CACHE;
+
+async function cachedSession(email) {
+  if (!SESSION_CACHE) return null;
+  const all = JSON.parse(await readFile(SESSION_CACHE, "utf8").catch(() => "{}"));
+  const sid = all[email];
+  if (!sid) return null;
+  return (await call(sid, "GET", "/api/boot")).status === 200 ? sid : null;
+}
+
+async function remember(email, sid) {
+  if (!SESSION_CACHE) return;
+  const all = JSON.parse(await readFile(SESSION_CACHE, "utf8").catch(() => "{}"));
+  all[email] = sid;
+  await writeFile(SESSION_CACHE, JSON.stringify(all));
+}
+
 export async function login(email, inviteToken) {
+  if (!inviteToken) {
+    const cached = await cachedSession(email);
+    if (cached) return cached;
+  }
+  const sid = await freshLogin(email, inviteToken);
+  if (!inviteToken) await remember(email, sid);
+  return sid;
+}
+
+async function freshLogin(email, inviteToken) {
   const mail = await requestCode(email, inviteToken);
   const code = mail.subject.match(/(\d{6})/)?.[1];
   assert.ok(code, `expected a code, got: ${mail.subject}`);

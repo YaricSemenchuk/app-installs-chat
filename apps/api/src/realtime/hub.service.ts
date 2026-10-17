@@ -22,6 +22,11 @@ export class RealtimeHub {
     }
   }
 
+  // Эфемерное событие одному человеку на все его устройства (в журнал не пишется).
+  toUser(userId: string, event: string, payload: unknown): void {
+    this.server?.to(rooms.user(userId)).emit(event, payload);
+  }
+
   joinConversation(userId: string, conversationId: string): void {
     this.server?.in(rooms.user(userId)).socketsJoin(rooms.conversation(conversationId));
   }

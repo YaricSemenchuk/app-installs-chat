@@ -1,5 +1,12 @@
 import { Body, Controller, Get, HttpCode, Logger, NotFoundException, Post, Query, Req, Res, UseGuards } from "@nestjs/common";
-import { EmailStartInput, EmailVerifyInput, type AuthProvidersDto, type UserDto } from "@teamchat/shared";
+import {
+  DesktopExchangeInput,
+  EmailStartInput,
+  EmailVerifyInput,
+  isDesktopChallenge,
+  type AuthProvidersDto,
+  type UserDto,
+} from "@teamchat/shared";
 import type { CookieOptions, Request, Response } from "express";
 import { toUserDto } from "../common/mappers.js";
 import { ZodPipe } from "../common/zod.pipe.js";
@@ -52,11 +59,12 @@ export class AuthController {
     return { user: toUserDto(user) };
   }
 
+  // ?desktop=<S256(verifier)> — вход для десктоп-приложения: Google открыт в системном браузере.
   @Get("google/start")
-  googleStart(@Query("invite") invite: string | undefined, @Res() res: Response): void {
+  googleStart(@Query("invite") invite: string | undefined, @Query("desktop") desktop: string | undefined, @Res() res: Response): void {
     if (!this.google.enabled) throw new NotFoundException("Вход через Google не настроен");
     const valid = invite && /^[A-Za-z0-9_-]{20,100}$/.test(invite) ? invite : undefined;
-    const { url, cookie } = this.google.start(valid);
+    const { url, cookie } = this.google.start(valid, isDesktopChallenge(desktop) ? desktop : undefined);
     res.cookie(GOOGLE_STATE_COOKIE, cookie, googleCookie);
     res.redirect(302, url);
   }
@@ -78,6 +86,11 @@ export class AuthController {
       const st = this.google.readState(cookie, state);
       if (!code) return fail("denied");
       const profile = await this.google.exchange(code, st.verifier);
+      if (st.desktop) {
+        // Сессия в этом браузере не нужна: страница /desktop-auth передаст код в приложение.
+        const handoff = await this.auth.googleHandoff(profile, st.invite, st.desktop);
+        return res.redirect(302, `/desktop-auth?code=${handoff}`);
+      }
       const { token } = await this.auth.signInWithGoogle(profile, st.invite, metaOf(req));
       res.cookie(SESSION_COOKIE, token, sessionCookie);
       res.redirect(302, "/");
@@ -87,6 +100,17 @@ export class AuthController {
       this.log.error(err);
       return fail("unknown");
     }
+  }
+
+  @Post("desktop/exchange")
+  async desktopExchange(
+    @Body(new ZodPipe(DesktopExchangeInput)) body: DesktopExchangeInput,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<{ user: UserDto }> {
+    const { token, user } = await this.auth.exchangeHandoff(body.code, body.verifier, metaOf(req));
+    res.cookie(SESSION_COOKIE, token, sessionCookie);
+    return { user: toUserDto(user) };
   }
 
   @Post("logout")

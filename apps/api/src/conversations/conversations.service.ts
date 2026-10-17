@@ -15,6 +15,7 @@ import { EventsService } from "../realtime/events.service.js";
 import { PresenceService } from "../realtime/presence.service.js";
 import { assertMember, canManage, isAdmin, isChannel, loadAccess } from "./access.js";
 import { MembershipService } from "./membership.service.js";
+import { toPreferencesDto } from "../notifications/preferences.service.js";
 
 type CountsRow = { conversation_id: string; last_read_seq: bigint; latest_seq: bigint; unread: bigint; mentions: bigint };
 
@@ -74,7 +75,7 @@ export class ConversationsService {
     // по событиям и применит идемпотентно.
     const [{ last }] = await this.prisma.$queryRaw<[{ last: bigint }]>`select coalesce(max(id), 0) as last from events`;
 
-    const [ws, users, memberships, counts] = await Promise.all([
+    const [ws, users, memberships, counts, prefs] = await Promise.all([
       this.prisma.workspace_settings.findUniqueOrThrow({ where: { id: 1 } }),
       this.prisma.users.findMany({ orderBy: { display_name: "asc" } }),
       this.prisma.conversation_members.findMany({
@@ -82,6 +83,7 @@ export class ConversationsService {
         include: { conversations: { include: { conversation_members: { select: { user_id: true, is_manager: true } } } } },
       }),
       this.counts(me.id),
+      this.prisma.user_preferences.findUnique({ where: { user_id: me.id } }),
     ]);
 
     const byId = new Map(counts.map((r) => [r.conversation_id, r]));
@@ -100,6 +102,7 @@ export class ConversationsService {
       users: users.map(toUserDto),
       conversations,
       presence: this.presence.snapshot(),
+      preferences: toPreferencesDto(prefs),
       lastEventId: Number(last),
     };
   }

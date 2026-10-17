@@ -15,6 +15,9 @@ import { FilesController } from "./files/files.controller.js";
 import { FilesService } from "./files/files.service.js";
 import { StorageService } from "./files/storage.js";
 import { HealthController } from "./health.controller.js";
+import { NotificationsController } from "./notifications/notifications.controller.js";
+import { NotificationsService } from "./notifications/notifications.service.js";
+import { PreferencesService } from "./notifications/preferences.service.js";
 import { InvitesController } from "./invites/invites.controller.js";
 import { InvitesService } from "./invites/invites.service.js";
 import { EventsService } from "./realtime/events.service.js";
@@ -27,7 +30,7 @@ import { UsersController } from "./users/users.controller.js";
 import { UsersService } from "./users/users.service.js";
 
 @Module({
-  controllers: [AuthController, ConversationsController, MessagesController, FilesController, SearchController, InvitesController, UsersController, HealthController],
+  controllers: [AuthController, ConversationsController, MessagesController, FilesController, SearchController, NotificationsController, InvitesController, UsersController, HealthController],
   providers: [
     PrismaService,
     MailService,
@@ -43,6 +46,8 @@ import { UsersService } from "./users/users.service.js";
     ConversationsService,
     MessagesService,
     StorageService,
+    PreferencesService,
+    NotificationsService,
     FilesService,
     SearchService,
     UsersService,

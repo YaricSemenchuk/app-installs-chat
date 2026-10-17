@@ -9,7 +9,8 @@ import type { GoogleProfile } from "./auth.service.js";
 export const GOOGLE_STATE_COOKIE = "g_oauth";
 export const GOOGLE_STATE_TTL_MS = 10 * 60_000;
 
-type State = { state: string; verifier: string; invite?: string; at: number };
+// desktop — S256-хэш verifier десктоп-приложения: после входа сессия уйдёт ему, а не в этот браузер.
+type State = { state: string; verifier: string; invite?: string; desktop?: string; at: number };
 
 export class GoogleAuthError extends Error {
   constructor(readonly code: "state" | "denied" | "exchange" | "unverified") {
@@ -25,8 +26,8 @@ export class GoogleAuthService {
   readonly enabled = Boolean(config.GOOGLE_CLIENT_ID && config.GOOGLE_CLIENT_SECRET);
   private readonly redirectUri = `${config.APP_URL}/api/auth/google/callback`;
 
-  start(invite?: string): { url: string; cookie: string } {
-    const st: State = { state: b64url(randomBytes(24)), verifier: b64url(randomBytes(32)), invite, at: Date.now() };
+  start(invite?: string, desktop?: string): { url: string; cookie: string } {
+    const st: State = { state: b64url(randomBytes(24)), verifier: b64url(randomBytes(32)), invite, desktop, at: Date.now() };
     const challenge = b64url(createHash("sha256").update(st.verifier).digest());
     const url = new URL(config.GOOGLE_AUTH_URL);
     url.search = new URLSearchParams({
