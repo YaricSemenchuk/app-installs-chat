@@ -6,7 +6,12 @@ apps/api/src/generated
 .env
 **/.env
 **/.dev-mail.log
-replica
+# Из replica в образ нужны только токены дизайна: из них сборка веба генерирует tokens.css.
+replica/*
+!replica/design
+replica/design/*
+!replica/design/tokens.json
+!replica/design/tokens.dark.json
 .claude
 **/.storage
 **/.storage-test
