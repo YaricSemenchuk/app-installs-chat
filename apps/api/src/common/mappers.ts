@@ -76,7 +76,12 @@ export function toConversationInfoDto(c: conversations): ConversationInfoDto {
 }
 
 export function toEventDto(e: events): EventDto {
-  const base = { id: Number(e.id), kind: e.kind, payload: e.payload };
+  // В журнале лежат и события до M2, где у сообщения ещё не было mentions: при догоне их отдают как есть.
+  const payload =
+    e.kind === "message.created" && e.payload && typeof e.payload === "object" && !Array.isArray(e.payload)
+      ? { mentions: [], ...e.payload }
+      : e.payload;
+  const base = { id: Number(e.id), kind: e.kind, payload };
   if (e.conversation_id) return { ...base, conversationId: e.conversation_id } as EventDto;
   if (e.user_id) return { ...base, userId: e.user_id } as EventDto;
   return base as EventDto;

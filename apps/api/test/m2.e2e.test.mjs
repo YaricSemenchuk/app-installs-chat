@@ -147,4 +147,23 @@ describe("M2 channels and DMs", () => {
     assert.equal(conv(await boot(boris), general.id).mentionCount, 0);
     borisLive.socket.disconnect();
   });
+
+  test("catch-up replays message events written before mentions existed", async () => {
+    const since = (await boot(owner)).lastEventId;
+    const sent = await send(owner, general.id, "сообщение из старого журнала");
+    // Так выглядят события, записанные до M2: в payload нет mentions.
+    const { default: pg } = await import("pg");
+    const db = new pg.Client({ connectionString: process.env.DATABASE_URL });
+    await db.connect();
+    try {
+      await db.query("update events set payload = payload - 'mentions' where kind = 'message.created' and payload->>'id' = $1", [sent.body.id]);
+    } finally {
+      await db.end();
+    }
+    const live = connect(owner, since);
+    await live.synced;
+    const replayed = await waitFor(() => live.events.find((e) => e.kind === "message.created" && e.payload.id === sent.body.id));
+    assert.deepEqual(replayed.payload.mentions, []);
+    live.socket.disconnect();
+  });
 });
