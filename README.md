@@ -124,3 +124,4 @@ TEAMCHAT_URL=https://chat.example.com npm run dist:mac
 `/desktop-auth`, та передаёт одноразовый код в приложение. Код без секрета, который знает только
 запустившее вход приложение, бесполезен.
 
+# app-installs-chat
