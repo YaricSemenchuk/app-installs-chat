@@ -99,7 +99,10 @@ export class TasksService {
       if (!(err instanceof JiraError)) throw err;
       return { account: null, jira: { issues: [], truncated: false, error: err.message } };
     }
-    if (!account) return { account: null, jira: { issues: [], truncated: false, error: null } };
+    if (!account) {
+      const hint = await this.jira.missingAccountHint().catch((err: unknown) => (err instanceof JiraError ? err.message : null));
+      return { account: null, jira: { issues: [], truncated: false, error: hint } };
+    }
     const { email: _email, ...person } = account;
     return { account: { ...person, userId: me.id }, jira: await this.list(this.jira.assigneeJql(account.accountId)) };
   }

@@ -112,6 +112,10 @@ function load(): Config {
     console.error("env JIRA_BASE_URL, JIRA_EMAIL, JIRA_API_TOKEN: для задач из Jira нужны все три");
     process.exit(1);
   }
+  // Сервер всё равно стартует (чат важнее задач), но лишние символы вокруг почты — частая ошибка при вставке.
+  if (parsed.data.JIRA_EMAIL && !z.email().safeParse(parsed.data.JIRA_EMAIL).success) {
+    console.warn(`env JIRA_EMAIL: ${JSON.stringify(parsed.data.JIRA_EMAIL)} не похоже на почту, Jira не примет токен`);
+  }
   // Диск контейнера на Railway стирается при каждом деплое: в production файлы только в бакете.
   if (parsed.data.NODE_ENV === "production" && parsed.data.STORAGE_DRIVER !== "s3") {
     console.error("env STORAGE_DRIVER: в production нужен s3 (Railway Bucket), диск контейнера не переживает деплой");

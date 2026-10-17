@@ -22,6 +22,9 @@ const PRIORITIES = {
   Medium: { id: "3", name: "Medium", iconUrl: `http://localhost:${JIRA_PORT}/images/icons/priorities/medium.svg` },
 };
 let issues = [];
+// Неверный токен Jira не отвергает, а отвечает как анонимному: /myself — 401, остальное — пустыми списками.
+let rejectAuth = false;
+let canBrowseUsers = true;
 
 const user = (accountId, name, email) => ({
   accountId,
@@ -70,7 +73,14 @@ const jira = createServer((req, res) => {
   req.on("end", () => {
     const url = new URL(req.url, "http://jira");
     jiraLog.push({ method: req.method, path: url.pathname, query: url.search, body: body ? JSON.parse(body) : null });
-    if (req.headers.authorization !== JIRA_AUTH) return json(res, 401, { errorMessages: ["Unauthorized"] });
+    const anonymous = rejectAuth || req.headers.authorization !== JIRA_AUTH;
+    if (url.pathname === "/rest/api/3/myself") {
+      return anonymous ? json(res, 401, { errorMessages: ["Unauthorized"] }) : json(res, 200, user("557058:bot", "Chat bot", process.env.JIRA_EMAIL));
+    }
+    if (anonymous) return json(res, 200, url.pathname === "/rest/api/3/search/jql" ? { issues: [], isLast: true } : []);
+    if (url.pathname === "/rest/api/3/mypermissions") {
+      return json(res, 200, { permissions: { USER_PICKER: { key: "USER_PICKER", havePermission: canBrowseUsers } } });
+    }
     if (req.method === "POST" && url.pathname === "/rest/api/3/search/jql") {
       const { jql, maxResults, nextPageToken } = JSON.parse(body);
       const result = searchJira(jql);
@@ -81,6 +91,7 @@ const jira = createServer((req, res) => {
       return json(res, 200, { issues: page, ...(next ? { nextPageToken: next } : { isLast: true }) });
     }
     if (url.pathname === "/rest/api/3/user/search") {
+      if (!canBrowseUsers) return json(res, 200, []);
       const a = accounts.get(url.searchParams.get("query"));
       return json(res, 200, a ? [user(a.accountId, a.name, a.showEmail ? url.searchParams.get("query") : undefined)] : []);
     }
@@ -173,6 +184,39 @@ describe("M7 tasks from Jira and Figma", () => {
   after(async () => {
     closeSockets();
     await Promise.all([new Promise((r) => jira.close(r)), new Promise((r) => figma.close(r))]);
+  });
+
+  test("a token Jira doesn't accept is reported, not shown as an empty list", async () => {
+    rejectAuth = true;
+    try {
+      const mine = await call(anna, "GET", "/api/me/tasks");
+      assert.equal(mine.status, 200, JSON.stringify(mine.body));
+      assert.equal(mine.body.account, null);
+      assert.match(mine.body.jira.error, /Jira не принимает служебный токен/);
+      const projects = await call(anna, "GET", "/api/jira/projects");
+      assert.equal(projects.status, 503);
+      assert.match(projects.body.message, /Jira не принимает служебный токен/);
+    } finally {
+      rejectAuth = false;
+    }
+  });
+
+  test("without the right to browse users, my tasks explain why nobody is found", async () => {
+    canBrowseUsers = false;
+    try {
+      const mine = await call(boris, "GET", "/api/me/tasks");
+      assert.equal(mine.body.account, null);
+      assert.match(mine.body.jira.error, /Browse users and groups/);
+    } finally {
+      canBrowseUsers = true;
+    }
+  });
+
+  test("the token owner is found without searching people", async () => {
+    const bot = await login(process.env.JIRA_EMAIL);
+    const mine = await call(bot, "GET", "/api/me/tasks");
+    assert.equal(mine.body.account.accountId, "557058:bot");
+    assert.equal(jiraLog.filter((r) => r.path === "/rest/api/3/user/search" && r.query.includes("jira-bot")).length, 0);
   });
 
   test("the server says what is connected; a fresh channel has no task sources", async () => {

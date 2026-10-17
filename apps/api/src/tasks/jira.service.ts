@@ -20,6 +20,7 @@ const SEARCH_TTL_MS = 30_000;
 const PROJECTS_TTL_MS = 10 * 60_000;
 const ACCOUNT_TTL_MS = 60 * 60_000;
 const ACCOUNT_MISS_TTL_MS = 10 * 60_000;
+const MYSELF_TTL_MS = 10 * 60_000;
 const CACHE_MAX = 500;
 const FIGMA_PER_ISSUE = 5;
 const FIELDS = ["summary", "status", "priority", "assignee", "issuetype", "duedate", "updated", "description"];
@@ -153,17 +154,25 @@ export class JiraService {
   }
 
   // Аккаунт Jira с этой почтой. Поиск по полной почте находит только её владельца, даже когда Jira прячет адрес в ответе.
+  // Владельца токена узнаём и без поиска: ему права искать людей не нужны.
   async accountFor(email: string): Promise<(Omit<JiraPersonDto, "userId"> & { email: string }) | null> {
     const key = `account:${email.toLowerCase()}`;
     const found = await this.cached(
       key,
       ACCOUNT_TTL_MS,
       async () => {
-        const users = await this.request<RawUser[]>(`/rest/api/3/user/search?query=${encodeURIComponent(email)}&maxResults=10`);
-        const people = users.filter((u) => u.accountType === "atlassian" && u.active !== false && ACCOUNT_ID_RE.test(u.accountId));
-        const exact = people.filter((u) => u.emailAddress?.toLowerCase() === email.toLowerCase());
-        const user = exact[0] ?? (people.length === 1 && !people[0]!.emailAddress ? people[0] : undefined);
-        if (!user) return null;
+        const target = email.toLowerCase();
+        const me = await this.whoami();
+        let user: RawUser | undefined;
+        if (me.emailAddress?.toLowerCase() === target || config.JIRA_EMAIL?.toLowerCase() === target) {
+          user = me;
+        } else {
+          const users = await this.request<RawUser[]>(`/rest/api/3/user/search?query=${encodeURIComponent(email)}&maxResults=10`);
+          const people = users.filter((u) => u.accountType === "atlassian" && u.active !== false && ACCOUNT_ID_RE.test(u.accountId));
+          const exact = people.filter((u) => u.emailAddress?.toLowerCase() === target);
+          user = exact[0] ?? (people.length === 1 && !people[0]!.emailAddress ? people[0] : undefined);
+        }
+        if (!user || !ACCOUNT_ID_RE.test(user.accountId)) return null;
         this.emailByAccount.set(user.accountId, email.toLowerCase());
         return { ...this.person(user), email: email.toLowerCase() };
       },
@@ -171,6 +180,21 @@ export class JiraService {
     );
     if (found) this.emailByAccount.set(found.accountId, found.email);
     return found;
+  }
+
+  // Почему человека не нашли, если причина в правах служебного аккаунта: без глобального права
+  // «Browse users and groups» Jira не ошибается, а молча отвечает пустым поиском.
+  async missingAccountHint(): Promise<string | null> {
+    const allowed = await this.cached(
+      "permission:USER_PICKER",
+      MYSELF_TTL_MS,
+      async () => {
+        const res = await this.request<{ permissions?: Record<string, { havePermission?: boolean }> }>("/rest/api/3/mypermissions?permissions=USER_PICKER");
+        return res.permissions?.USER_PICKER?.havePermission === true;
+      },
+      (ok) => (ok ? MYSELF_TTL_MS : 0),
+    );
+    return allowed ? null : "Служебному аккаунту Jira нужно глобальное право «Browse users and groups»: без него Jira не находит людей по почте";
   }
 
   // Что запросить для «Моих задач». accountId вставляется в JQL, поэтому проверяем его формат.
@@ -225,7 +249,18 @@ export class JiraService {
     };
   }
 
+  // Неверную пару «почта + токен» Jira не отвергает, а отвечает как анонимному: пустыми списками и «проекта нет».
+  // Поэтому прежде чем верить ответу, проверяем, что Jira узнаёт служебный аккаунт (401 здесь — неверный токен).
+  private whoami(): Promise<RawUser> {
+    return this.cached("myself", MYSELF_TTL_MS, () => this.send<RawUser>("/rest/api/3/myself"));
+  }
+
   private async request<T>(path: string, init: { method?: string; body?: unknown } = {}): Promise<T> {
+    await this.whoami();
+    return this.send<T>(path, init);
+  }
+
+  private async send<T>(path: string, init: { method?: string; body?: unknown } = {}): Promise<T> {
     if (!this.enabled) throw new JiraError("unavailable", "Jira не подключена");
     const method = init.method ?? "GET";
     let res: Response;
