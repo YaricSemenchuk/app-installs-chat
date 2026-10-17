@@ -11,6 +11,8 @@ import { ConversationsService } from "./conversations/conversations.service.js";
 import { MessagesService } from "./conversations/messages.service.js";
 import { MembershipService } from "./conversations/membership.service.js";
 import { PrismaService } from "./db/prisma.service.js";
+import { InstallersController } from "./desktop/installers.controller.js";
+import { InstallersService } from "./desktop/installers.service.js";
 import { FilesController } from "./files/files.controller.js";
 import { FilesService } from "./files/files.service.js";
 import { StorageService } from "./files/storage.js";
@@ -31,7 +33,7 @@ import { UsersController } from "./users/users.controller.js";
 import { UsersService } from "./users/users.service.js";
 
 @Module({
-  controllers: [AuthController, ConversationsController, MessagesController, FilesController, SearchController, NotificationsController, InvitesController, UsersController, HealthController],
+  controllers: [AuthController, ConversationsController, MessagesController, FilesController, SearchController, NotificationsController, InvitesController, UsersController, InstallersController, HealthController],
   providers: [
     PrismaService,
     MailService,
@@ -53,6 +55,7 @@ import { UsersService } from "./users/users.service.js";
     FilesService,
     SearchService,
     UsersService,
+    InstallersService,
     BootstrapService,
   ],
 })

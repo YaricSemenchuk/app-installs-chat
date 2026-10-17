@@ -39,8 +39,6 @@ const env = {
   GOOGLE_AUTH_URL: `http://localhost:${GOOGLE_PORT}/auth`,
   GOOGLE_TOKEN_URL: `http://localhost:${GOOGLE_PORT}/token`,
   // Файлы e2e кладут на диск в отдельный каталог, он пересоздаётся при каждом запуске.
-  DESKTOP_VERSION: "1.0.0",
-  DESKTOP_MAC_URL: "https://downloads.example.test/TeamChat-1.0.0.dmg",
   STORAGE_DRIVER: "disk",
   STORAGE_DIR: resolve(root, ".storage-test"),
 };

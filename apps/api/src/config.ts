@@ -42,13 +42,6 @@ const Env = z.object({
   BUCKET_NAME: z.string().optional(),
   BUCKET_ACCESS_KEY_ID: z.string().optional(),
   BUCKET_SECRET_ACCESS_KEY: z.string().optional(),
-  // Десктоп-приложение: последняя версия и ссылки на установщики (страница /download).
-  DESKTOP_VERSION: z
-    .string()
-    .optional()
-    .transform((v) => (v ? v : undefined)),
-  DESKTOP_MAC_URL: z.url().optional(),
-  DESKTOP_WIN_URL: z.url().optional(),
   BUCKET_FORCE_PATH_STYLE: z
     .enum(["true", "false"])
     .default("false")

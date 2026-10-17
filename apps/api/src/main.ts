@@ -1,5 +1,6 @@
 import "reflect-metadata";
 import { existsSync } from "node:fs";
+import type { Server } from "node:http";
 import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { NestFactory } from "@nestjs/core";
@@ -12,7 +13,7 @@ import { config, isProd } from "./config.js";
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 // Байты файла приходят как есть. Это PUT: кросс-сайтом без CORS-preflight браузер его не отправит.
-const RAW_UPLOAD = /^\/api\/files\/[0-9a-f-]{36}\/content$/;
+const RAW_UPLOAD = /^\/api\/(files\/[0-9a-f-]{36}\/content|admin\/desktop\/(mac|win))$/;
 
 // Изменяющие запросы принимаем только как JSON: обычная HTML-форма с чужого сайта так не отправит.
 // POST — всегда JSON (форма умеет только GET/POST); DELETE/PUT/PATCH без тела браузер кросс-сайтом
@@ -56,6 +57,8 @@ async function main(): Promise<void> {
     });
   }
 
+  // Установщик в 230 МБ с медленного канала грузится дольше пяти минут — стандартного лимита Node на запрос.
+  (app.getHttpServer() as Server).requestTimeout = 20 * 60_000;
   await app.listen(config.PORT, "0.0.0.0");
 }
 

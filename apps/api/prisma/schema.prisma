@@ -519,6 +519,7 @@ model users {
   conversations_conversations_created_byTousers   conversations[]        @relation("conversations_created_byTousers")
   conversations_conversations_topic_set_byTousers conversations[]        @relation("conversations_topic_set_byTousers")
   custom_emoji                                    custom_emoji[]
+  desktop_installers                              desktop_installers[]
   drafts                                          drafts[]
   files                                           files[]
   invites_invites_accepted_user_idTousers         invites[]              @relation("invites_accepted_user_idTousers")
@@ -554,4 +555,19 @@ model workspace_settings {
   message_edit_window_minutes Int?
   created_at                  DateTime @default(now()) @db.Timestamptz(6)
   updated_at                  DateTime @default(now()) @db.Timestamptz(6)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model desktop_installers {
+  platform    String   @id
+  version     String
+  file_name   String
+  size_bytes  BigInt
+  storage_key String
+  uploaded_by String?  @db.Uuid
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @default(now()) @db.Timestamptz(6)
+  users       users?   @relation(fields: [uploaded_by], references: [id], onUpdate: NoAction)
+
+  @@index([uploaded_by])
 }

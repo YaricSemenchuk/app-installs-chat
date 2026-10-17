@@ -48,14 +48,14 @@ export class FilesController {
 
   @Get(":id/download")
   async download(@CurrentUser() me: users, @Param("id", Id) id: string, @Query("inline") inline: string | undefined, @Res() res: Response) {
-    send(res, await this.files.download(me, id, inline === "1"));
+    sendDelivery(res, await this.files.download(me, id, inline === "1"));
   }
 
   @Get(":id/thumb/:size")
   async thumb(@CurrentUser() me: users, @Param("id", Id) id: string, @Param("size") size: string, @Res() res: Response) {
     const n = Number(size);
     if (!(THUMB_SIZES as readonly number[]).includes(n)) throw new BadRequestException("Нет такой миниатюры");
-    send(res, await this.files.thumb(me, id, n));
+    sendDelivery(res, await this.files.thumb(me, id, n));
   }
 
   @Delete(":id")
@@ -66,7 +66,7 @@ export class FilesController {
 }
 
 // Бакет — редирект на подписанную ссылку (живёт 5 минут, кэшируем чуть меньше); диск — поток отсюда.
-function send(res: Response, d: Delivery & { contentType: string; disposition: string }) {
+export function sendDelivery(res: Response, d: Delivery & { contentType: string; disposition: string }) {
   res.setHeader("X-Content-Type-Options", "nosniff");
   if ("redirect" in d) {
     res.setHeader("Cache-Control", "private, max-age=240");

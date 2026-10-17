@@ -1,4 +1,4 @@
-// M5: настройки и серверное решение об уведомлениях, вход в десктоп-приложение через Google, /desktop.
+// M5: настройки и серверное решение об уведомлениях, вход в десктоп-приложение через Google.
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { createServer } from "node:http";
 import { after, before, describe, test } from "node:test";
@@ -126,7 +126,7 @@ describe("M5 notifications", () => {
   });
 });
 
-describe("M5 desktop sign-in and downloads", () => {
+describe("M5 desktop sign-in", () => {
   let server;
   let nextProfile;
   let lastChallenge;
@@ -191,11 +191,5 @@ describe("M5 desktop sign-in and downloads", () => {
     await db.query("update auth_handoffs set expires_at = now() - interval '1 second' where consumed_at is null");
     await db.end();
     assert.equal((await call(null, "POST", "/api/auth/desktop/exchange", { code, verifier })).status, 400);
-  });
-
-  test("the download page data is public", async () => {
-    const res = await call(null, "GET", "/api/desktop");
-    assert.equal(res.status, 200);
-    assert.deepEqual(res.body, { version: "1.0.0", macUrl: "https://downloads.example.test/TeamChat-1.0.0.dmg", winUrl: null });
   });
 });

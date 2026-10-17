@@ -5,14 +5,16 @@ import type {
   ConversationInfoDto,
   ConversationKind,
   EventDto,
+  DesktopPlatform,
   FileDto,
+  InstallerDto,
   InviteDto,
   MessageDto,
   ReactionDto,
   Role,
   UserDto,
 } from "@teamchat/shared";
-import type { conversations, events, files, invites, messages, users } from "../generated/prisma/client.js";
+import type { conversations, desktop_installers, events, files, invites, messages, users } from "../generated/prisma/client.js";
 
 // Версия в адресе аватара — от ключа объекта: новое фото → новый адрес, старое можно кешировать надолго.
 const avatarUrl = (u: users) => (u.avatar_key ? `/api/users/${u.id}/avatar?v=${createHash("sha1").update(u.avatar_key).digest("hex").slice(0, 12)}` : null);
@@ -155,4 +157,17 @@ export function toEventDto(e: events): EventDto {
   if (e.conversation_id) return { ...base, conversationId: e.conversation_id } as EventDto;
   if (e.user_id) return { ...base, userId: e.user_id } as EventDto;
   return base as EventDto;
+}
+
+export function toInstallerDto(r: desktop_installers): InstallerDto {
+  const platform = r.platform as DesktopPlatform;
+  return {
+    platform,
+    version: r.version,
+    name: r.file_name,
+    size: Number(r.size_bytes),
+    uploadedAt: r.created_at.toISOString(),
+    uploadedBy: r.uploaded_by,
+    url: `/api/desktop/${platform}/download`,
+  };
 }
