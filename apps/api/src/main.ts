@@ -21,7 +21,7 @@ const RAW_UPLOAD = /^\/api\/(files\/[0-9a-f-]{36}\/content|admin\/desktop\/(mac|
 function jsonOnlyMutations(req: Request, res: Response, next: NextFunction): void {
   const hasBody = Number(req.headers["content-length"] ?? 0) > 0 || req.headers["transfer-encoding"] !== undefined;
   const needsJson = req.method === "POST" || hasBody;
-  const rawUpload = req.method === "PUT" && RAW_UPLOAD.test(req.path);
+  const rawUpload = (req.method === "PUT" && RAW_UPLOAD.test(req.path)) || (req.method === "POST" && req.path === "/api/livekit/webhook");
   if (req.path.startsWith("/api/") && !SAFE_METHODS.has(req.method) && needsJson && !rawUpload && !req.is("application/json")) {
     res.status(415).json({ statusCode: 415, message: "Нужен Content-Type: application/json" });
     return;

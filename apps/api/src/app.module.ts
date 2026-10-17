@@ -5,6 +5,8 @@ import { GoogleAuthService } from "./auth/google.service.js";
 import { MailService } from "./auth/mail.service.js";
 import { SessionGuard } from "./auth/session.guard.js";
 import { BootstrapService } from "./bootstrap.service.js";
+import { CallsController, LivekitWebhookController } from "./calls/calls.controller.js";
+import { CallsService } from "./calls/calls.service.js";
 import { ConversationsController } from "./conversations/conversations.controller.js";
 import { MessagesController } from "./conversations/messages.controller.js";
 import { ConversationsService } from "./conversations/conversations.service.js";
@@ -33,7 +35,7 @@ import { UsersController } from "./users/users.controller.js";
 import { UsersService } from "./users/users.service.js";
 
 @Module({
-  controllers: [AuthController, ConversationsController, MessagesController, FilesController, SearchController, NotificationsController, InvitesController, UsersController, InstallersController, HealthController],
+  controllers: [AuthController, ConversationsController, MessagesController, FilesController, SearchController, NotificationsController, InvitesController, UsersController, InstallersController, CallsController, LivekitWebhookController, HealthController],
   providers: [
     PrismaService,
     MailService,
@@ -56,6 +58,7 @@ import { UsersService } from "./users/users.service.js";
     SearchService,
     UsersService,
     InstallersService,
+    CallsService,
     BootstrapService,
   ],
 })

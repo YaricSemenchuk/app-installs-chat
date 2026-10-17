@@ -1,4 +1,4 @@
-// e2e: свежая база teamchat_test, свой экземпляр API на отдельном порту, mock Google, node --test.
+// e2e: свежая база teamchat_test, свой экземпляр API на отдельном порту, mock Google и LiveKit, node --test.
 // Запуск: npm run test:e2e (из корня или apps/api). Нужен Postgres из DATABASE_URL в apps/api/.env.
 import { execFileSync, spawn } from "node:child_process";
 import { existsSync, rmSync } from "node:fs";
@@ -10,6 +10,7 @@ if (existsSync(resolve(root, ".env"))) process.loadEnvFile(resolve(root, ".env")
 
 const PORT = 3201;
 const GOOGLE_PORT = 3299;
+const LIVEKIT_PORT = 3298; // поддельный API комнат LiveKit поднимает m6-calls.e2e.test.mjs
 const baseUrl = new URL(process.env.DATABASE_URL);
 const testDb = process.env.E2E_DATABASE ?? "teamchat_test";
 const testUrl = new URL(baseUrl);
@@ -38,6 +39,9 @@ const env = {
   GOOGLE_CLIENT_SECRET: "e2e-client-secret",
   GOOGLE_AUTH_URL: `http://localhost:${GOOGLE_PORT}/auth`,
   GOOGLE_TOKEN_URL: `http://localhost:${GOOGLE_PORT}/token`,
+  LIVEKIT_URL: `ws://localhost:${LIVEKIT_PORT}`,
+  LIVEKIT_API_KEY: "e2e-livekit-key",
+  LIVEKIT_API_SECRET: "e2e-livekit-secret-0123456789abcdef0123",
   // Файлы e2e кладут на диск в отдельный каталог, он пересоздаётся при каждом запуске.
   STORAGE_DRIVER: "disk",
   STORAGE_DIR: resolve(root, ".storage-test"),
@@ -62,7 +66,7 @@ for (let i = 0; ; i++) {
 
 const tests = spawn("node", ["--test", "--test-concurrency=1", "test/*.test.mjs"], {
   cwd: root,
-  env: { ...env, E2E_BASE_URL: `http://localhost:${PORT}`, E2E_GOOGLE_PORT: String(GOOGLE_PORT) },
+  env: { ...env, E2E_BASE_URL: `http://localhost:${PORT}`, E2E_GOOGLE_PORT: String(GOOGLE_PORT), E2E_LIVEKIT_PORT: String(LIVEKIT_PORT) },
   stdio: "inherit",
 });
 tests.on("exit", (code) => {

@@ -34,6 +34,20 @@ const Env = z.object({
   // Переопределяются только в e2e-тестах, чтобы не ходить в настоящий Google.
   GOOGLE_AUTH_URL: z.url().default("https://accounts.google.com/o/oauth2/v2/auth"),
   GOOGLE_TOKEN_URL: z.url().default("https://oauth2.googleapis.com/token"),
+  // Звонки через LiveKit: адрес проекта (wss://<проект>.livekit.cloud) и ключ API. Без них звонки выключены.
+  LIVEKIT_URL: z
+    .string()
+    .optional()
+    .transform((v) => (v ? v : undefined))
+    .pipe(z.url().optional()),
+  LIVEKIT_API_KEY: z
+    .string()
+    .optional()
+    .transform((v) => (v ? v : undefined)),
+  LIVEKIT_API_SECRET: z
+    .string()
+    .optional()
+    .transform((v) => (v ? v : undefined)),
   // Файлы: S3-совместимый бакет (Railway Buckets) или каталог на диске — для разработки и e2e.
   STORAGE_DRIVER: z.enum(["s3", "disk"]).default("disk"),
   STORAGE_DIR: z.string().default(".storage"),
@@ -59,6 +73,11 @@ function load(): Config {
   // Без почты сервер всё равно стартует: письма уходят в лог (см. MailService), чтобы владелец мог войти первым.
   if (parsed.data.NODE_ENV === "production" && !parsed.data.RESEND_API_KEY) {
     console.warn("env RESEND_API_KEY не задан: письма не отправляются, коды входа и приглашения пишутся в лог сервиса");
+  }
+  const livekit = [parsed.data.LIVEKIT_URL, parsed.data.LIVEKIT_API_KEY, parsed.data.LIVEKIT_API_SECRET].filter(Boolean).length;
+  if (livekit !== 0 && livekit !== 3) {
+    console.error("env LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET: для звонков нужны все три");
+    process.exit(1);
   }
   // Диск контейнера на Railway стирается при каждом деплое: в production файлы только в бакете.
   if (parsed.data.NODE_ENV === "production" && parsed.data.STORAGE_DRIVER !== "s3") {

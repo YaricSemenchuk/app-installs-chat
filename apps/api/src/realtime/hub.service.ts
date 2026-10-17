@@ -27,6 +27,11 @@ export class RealtimeHub {
     this.server?.to(rooms.user(userId)).emit(event, payload);
   }
 
+  // Эфемерное событие всем, кто сейчас подключён и состоит в разговоре.
+  toConversation(conversationId: string, event: string, payload: unknown): void {
+    this.server?.to(rooms.conversation(conversationId)).emit(event, payload);
+  }
+
   joinConversation(userId: string, conversationId: string): void {
     this.server?.in(rooms.user(userId)).socketsJoin(rooms.conversation(conversationId));
   }
