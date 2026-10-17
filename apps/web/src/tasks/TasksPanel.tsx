@@ -76,8 +76,8 @@ export function TasksPanel({ boot, conv, onClose }: { boot: BootDto; conv: Conve
             title="К каналу не привязаны задачи"
             text={
               canEdit
-                ? "Укажите проект Jira — здесь появятся его открытые задачи по приоритету. Файлы Figma добавят правки из комментариев к макетам"
-                : "Привязать проект Jira или файлы Figma может любой участник канала"
+                ? `Укажите проект Jira — здесь появятся его открытые задачи по приоритету.${integrations.figma ? " Файлы Figma добавят правки из комментариев к макетам" : ""}`
+                : `Привязать ${integrations.figma ? "проект Jira или файлы Figma" : "проект Jira"} может любой участник канала`
             }
             action={canEdit ? { label: "Привязать", onClick: () => setEditing(true) } : undefined}
           />

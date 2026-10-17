@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ChevronDown, ChevronsDown, ChevronsUp, ChevronUp, CircleAlert, Equal, ExternalLink, Frame, X } from "lucide-react";
 import type { BootDto, FigmaCommentDto, FigmaPreviewDto, JiraIssueDto, PriorityLevel, StatusCategory } from "@teamchat/shared";
 import { displayOf } from "../data/boot";
-import { groupByPriority, useFigmaPreview } from "../data/tasks";
+import { groupByPriority, useFigmaPreview, useIntegrations } from "../data/tasks";
 import { cx } from "../lib/cx";
 import { dayLabel, formatTime, plural } from "../lib/format";
 import { Avatar } from "../ui/Avatar";
@@ -50,7 +50,9 @@ function Assignee({ boot, issue }: { boot: BootDto; issue: JiraIssueDto }) {
 
 export function IssueRow({ boot, issue, showAssignee = true }: { boot: BootDto; issue: JiraIssueDto; showAssignee?: boolean }) {
   const [designs, setDesigns] = useState(false);
-  const count = issue.figma.length;
+  // Без токена Figma превью строить нечем: макеты — просто ссылками в Figma.
+  const previews = useIntegrations().figma;
+  const count = previews ? issue.figma.length : 0;
   return (
     <li className={s.issue}>
       <a className={s.summary} href={issue.url} target="_blank" rel="noreferrer">
@@ -60,6 +62,14 @@ export function IssueRow({ boot, issue, showAssignee = true }: { boot: BootDto; 
         <StatusPill name={issue.status.name} category={issue.status.category} />
         {showAssignee && <Assignee boot={boot} issue={issue} />}
         {issue.dueDate && <Due date={issue.dueDate} />}
+        {!previews &&
+          issue.figma.map((ref, i) => (
+            <a key={ref.url} className={s.designToggle} href={ref.url} target="_blank" rel="noreferrer">
+              <Frame aria-hidden />
+              {issue.figma.length > 1 ? `Макет ${i + 1}` : "Макет"}
+              <ExternalLink aria-hidden />
+            </a>
+          ))}
         {count > 0 && (
           <button type="button" className={s.designToggle} aria-expanded={designs} onClick={() => setDesigns((v) => !v)}>
             <Frame aria-hidden />
