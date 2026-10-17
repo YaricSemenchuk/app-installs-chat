@@ -71,7 +71,7 @@ export function TaskSourceDialog({
       open={open}
       onOpenChange={onOpenChange}
       title={`Задачи в #${channelName}`}
-      description="Вкладку видят все в канале. Чат только читает Jira и Figma: статусы меняют там"
+      description={`Вкладку видят все в канале. Чат только читает ${integrations.figma ? "Jira и Figma" : "Jira"}: статусы меняют там`}
       size="m"
       footer={
         <>

@@ -214,6 +214,7 @@
   color: var(--color-danger-text);
 }
 
+// Кнопка «Макет» с превью или, без токена Figma, ссылка на макет.
 .designToggle {
   display: inline-flex;
   align-items: center;
@@ -225,6 +226,7 @@
   border-radius: var(--radius-chip);
   background: transparent;
   color: var(--color-text-secondary);
+  text-decoration: none;
   cursor: pointer;
   @include type(caption);
 
