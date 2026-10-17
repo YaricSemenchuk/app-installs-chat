@@ -507,3 +507,33 @@ export type PresenceEventDto = { userId: string; presence: Presence };
 
 // Сервер → клиент: "events" (пачка по возрастанию id), "synced" (догрузка закончена), "resync" (журнал короче — перезагрузить состояние)
 export const SOCKET_PATH = "/ws";
+
+// ───────────── звонки ─────────────
+// Медиа идёт через LiveKit (облако): сервер чата только выдаёт токены и знает, кто в каком звонке.
+// В ЛС звонок «звонит» остальным участникам; в канале это созвон, к которому можно присоединиться.
+export type CallDto = {
+  id: string;
+  conversationId: string;
+  startedBy: string | null;
+  startedAt: string;
+  participantIds: string[]; // кто сейчас в звонке
+};
+
+export type CallsDto = { enabled: boolean; calls: CallDto[] };
+
+// Ответ на «начать или присоединиться»: куда подключаться и с каким токеном.
+export type CallJoinDto = { call: CallDto; url: string; token: string };
+
+// Сервер → клиент, мимо журнала: состояние звонков эфемерно, после переподключения клиент заново читает GET /calls.
+export const CALL_EVENT = "call";
+export type CallEventDto =
+  | { kind: "updated"; call: CallDto }
+  | { kind: "ended"; callId: string; conversationId: string }
+  // Входящий звонок в ЛС: показать окно с «Принять» и «Отклонить».
+  | { kind: "ring"; call: CallDto; from: string }
+  // Звонок больше не звонит этому человеку: принял на другом устройстве, отклонил или звонящий положил трубку.
+  | { kind: "ring.stop"; callId: string }
+  | { kind: "declined"; callId: string; userId: string };
+
+// Сколько звонит вызов в ЛС, пока звонящий один.
+export const CALL_RING_SECONDS = 45;
