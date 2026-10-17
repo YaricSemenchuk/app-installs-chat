@@ -111,7 +111,7 @@ feature,area,priority,original,clone,notes
 Навигация: ⌥↑/↓ по сайдбару и ⌥⇧↑/↓ по непрочитанному,keyboard,could,yes,no,
 Справка по горячим клавишам ⌘/,keyboard,could,yes,no,S40
 Светлая и тёмная тема,appearance,should,yes,partial,M0: по системной теме; переключатель в настройках — M7
-Huddles: аудио/видео-звонки,calls,could,yes,skip,вне среза v1; отдельный этап (WebRTC через LiveKit)
+Huddles: аудио/видео-звонки,calls,must,yes,partial,"M6: LiveKit Cloud; звонок 1:1 и группе в ЛС с вызовом, созвон в канале, видео, показ экрана, десктоп; медиа ещё не проверено на настоящем проекте LiveKit"
 Боты и входящие вебхуки,integrations,could,yes,skip,вне среза v1; следующий этап после ядра
 Slack Connect: каналы с другими компаниями,network,could,yes,skip,сеть Slack; у нас внутренний чат
 Маркетплейс приложений,integrations,could,yes,skip,партнёрская экосистема Slack

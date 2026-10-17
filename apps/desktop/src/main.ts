@@ -3,7 +3,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { app, BrowserWindow, ipcMain, Menu, nativeImage, Notification, session, shell, Tray, type IpcMainEvent } from "electron";
+import { app, BrowserWindow, desktopCapturer, ipcMain, Menu, nativeImage, Notification, session, shell, Tray, type IpcMainEvent } from "electron";
 
 const PROTOCOL = "teamchat";
 const APP_ID = "app.promobile.chat";
@@ -158,11 +158,23 @@ function openExternal(url: string) {
   }
 }
 
-// Разрешения сайту: только копирование в буфер и полноэкранный режим. Уведомления идут через оболочку.
+// Разрешения сайту: копирование в буфер, полноэкранный режим и камера с микрофоном для звонков — только своему
+// серверу. Уведомления идут через оболочку. Системный запрос доступа к камере и микрофону macOS покажет сам.
 function lockDownSession() {
-  const allowed = new Set(["clipboard-sanitized-write", "fullscreen"]);
+  const allowed = new Set(["clipboard-sanitized-write", "fullscreen", "media"]);
   session.defaultSession.setPermissionRequestHandler((wc, permission, cb) => cb(sameOrigin(wc.getURL()) && allowed.has(permission)));
   session.defaultSession.setPermissionCheckHandler((_wc, permission, origin) => origin === ORIGIN && allowed.has(permission));
+  // Показ экрана в звонке. На macOS 15+ выбор экрана или окна — системным окном; где его нет, показываем весь первый экран.
+  session.defaultSession.setDisplayMediaRequestHandler(
+    (request, callback) => {
+      if (!sameOrigin(request.frame?.url ?? "")) return callback({});
+      void desktopCapturer
+        .getSources({ types: ["screen"] })
+        .then((sources) => callback(sources[0] ? { video: sources[0], audio: process.platform === "win32" ? "loopback" : undefined } : {}))
+        .catch(() => callback({}));
+    },
+    { useSystemPicker: true },
+  );
 }
 
 // ───────────── мост с веб-клиентом ─────────────

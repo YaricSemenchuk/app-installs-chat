@@ -50,7 +50,11 @@
       "icon": "build/icon-mac.png",
       "category": "public.app-category.business",
       "identity": "-",
-      "hardenedRuntime": false
+      "hardenedRuntime": false,
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "Микрофон нужен для голосовых звонков в Promobile Chat.",
+        "NSCameraUsageDescription": "Камера нужна для видеозвонков в Promobile Chat."
+      }
     },
     "dmg": {
       "title": "Promobile Chat ${version}"
