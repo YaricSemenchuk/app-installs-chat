@@ -180,6 +180,13 @@
   font-weight: var(--type-body-read-weight);
 }
 
+.call {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--color-accent);
+}
+
 .draft {
   width: 14px;
   height: 14px;

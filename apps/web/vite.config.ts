@@ -5,6 +5,8 @@ const API = process.env.API_URL ?? "http://localhost:3000";
 
 export default defineConfig({
   plugins: [react()],
+  // LiveKit грузится лениво, при первом звонке. Без предсборки Vite нашёл бы его только тогда и перезагрузил страницу посреди звонка.
+  optimizeDeps: { include: ["livekit-client", "@livekit/components-react"] },
   server: {
     port: 5173,
     strictPort: true,

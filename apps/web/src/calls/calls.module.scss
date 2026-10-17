@@ -1,0 +1,228 @@
+@use "../styles/mixins" as *;
+
+// ───────── окно звонка ─────────
+
+.window {
+  position: fixed;
+  right: var(--space-16);
+  bottom: var(--space-16);
+  z-index: 45; // над чатом и диалогами, под меню, подсказками и тостами
+  display: flex;
+  width: min(360px, calc(100vw - var(--space-32)));
+  max-height: calc(100vh - var(--space-32));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-raised);
+  box-shadow: var(--shadow-modal);
+  overflow: hidden;
+}
+
+.expanded {
+  inset: var(--space-16);
+  width: auto;
+  max-height: none;
+}
+
+.room {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  padding: var(--space-12) var(--space-16);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+  @include type(label);
+
+  svg {
+    flex: none;
+    width: var(--size-icon);
+    height: var(--size-icon);
+    color: var(--color-accent);
+  }
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  @include truncate;
+}
+
+.muted {
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  @include type(caption);
+}
+
+.stage {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-8);
+  min-height: 0;
+  padding: var(--space-12);
+  overflow: auto;
+}
+
+.screen {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  border-radius: var(--radius-input);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.screenVideo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.caption {
+  position: absolute;
+  left: var(--space-8);
+  bottom: var(--space-8);
+  padding: var(--space-2) var(--space-8);
+  border-radius: var(--radius-chip);
+  background: var(--color-overlay);
+  color: var(--color-on-accent);
+  @include type(caption);
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  .expanded & {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+
+  .withScreen & {
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    grid-auto-columns: 140px;
+    overflow-x: auto;
+  }
+}
+
+.tile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 16 / 10;
+  border: 2px solid transparent;
+  border-radius: var(--radius-input);
+  background: var(--color-surface);
+  overflow: hidden;
+  @include transition(border-color);
+}
+
+// Говорит сейчас — рамка акцентом.
+.speaking {
+  border-color: var(--color-accent);
+}
+
+.video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.name {
+  position: absolute;
+  left: var(--space-4);
+  right: var(--space-4);
+  bottom: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  max-width: max-content;
+  padding: var(--space-2) var(--space-8);
+  border-radius: var(--radius-chip);
+  background: var(--color-overlay);
+  color: var(--color-on-accent);
+  @include type(caption);
+  @include truncate;
+
+  svg {
+    flex: none;
+    width: 12px;
+    height: 12px;
+  }
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-8) var(--space-12);
+  border-top: 1px solid var(--color-border);
+}
+
+.leave {
+  margin-left: auto;
+}
+
+// ───────── входящий звонок ─────────
+
+.incoming {
+  position: fixed;
+  top: var(--space-16);
+  right: var(--space-16);
+  z-index: 46;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--space-12) var(--space-16);
+  width: min(360px, calc(100vw - var(--space-32)));
+  padding: var(--space-16);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-raised);
+  box-shadow: var(--shadow-modal);
+}
+
+.incomingText {
+  min-width: 0;
+}
+
+.incomingTitle {
+  color: var(--color-text);
+  @include type(title);
+  @include truncate;
+}
+
+.incomingActions {
+  display: flex;
+  grid-column: 1 / -1;
+  justify-content: flex-end;
+  gap: var(--space-8);
+}
+
+// ───────── шапка разговора и сайдбар ─────────
+
+.inCall {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: 0 var(--space-8);
+  color: var(--color-accent);
+  @include type(caption);
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}

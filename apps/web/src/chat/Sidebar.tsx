@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router";
-import { ChevronDown, Hash, Lock, Pencil, Plus, Users } from "lucide-react";
+import { ChevronDown, Hash, Headphones, Lock, Pencil, Plus, Users } from "lucide-react";
 import { cx } from "../lib/cx";
 import { Avatar, type Presence } from "../ui/Avatar";
 import { Badge } from "../ui/Feedback";
@@ -21,6 +21,7 @@ export type ItemState = {
   selected?: boolean;
   draft?: boolean;
   hover?: boolean;
+  call?: boolean; // в разговоре идёт звонок
 };
 
 export function Sidebar({
@@ -99,9 +100,9 @@ function label(entry: SidebarEntry): string {
 }
 
 export function SidebarItem({ entry, state = {}, to }: { entry: SidebarEntry; state?: ItemState; to?: string }) {
-  const { unread, mentions, muted, selected, draft, hover } = state;
+  const { unread, mentions, muted, selected, draft, hover, call } = state;
   const text = label(entry);
-  const aria = [text, mentions ? `${mentions} упоминания` : unread ? "есть непрочитанное" : ""]
+  const aria = [text, call ? "идёт звонок" : "", mentions ? `${mentions} упоминания` : unread ? "есть непрочитанное" : ""]
     .filter(Boolean)
     .join(", ");
   const className = cx(s.item, unread && !muted && s.unread, muted && s.muted, selected && s.selected, hover && s.hover);
@@ -123,6 +124,7 @@ export function SidebarItem({ entry, state = {}, to }: { entry: SidebarEntry; st
           {text}
           {entry.kind === "dm" && entry.self && <span className={s.self}> (вы)</span>}
         </span>
+        {call && <Headphones className={s.call} aria-hidden />}
         {draft && !mentions && <Pencil className={s.draft} aria-label="Черновик" />}
         {mentions ? <Badge count={mentions} /> : null}
     </>

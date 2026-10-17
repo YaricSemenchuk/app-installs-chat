@@ -17,6 +17,7 @@ import { api } from "../api/http";
 import { ChannelDetailsDialog } from "../channels/ChannelDetailsDialog";
 import { ChatContext, type ChatCtx, type Editing } from "../chat/context";
 import { ConversationHeader } from "../chat/ConversationHeader";
+import { CallButton } from "../calls/CallButton";
 import { MessageList } from "../chat/MessageList";
 import { ThreadPanel } from "../chat/ThreadPanel";
 import { displayOf, isOnline, queryClient, updateConversation, useBoot, userName } from "../data/boot";
@@ -273,6 +274,7 @@ function Conversation({ boot, conv }: { boot: BootDto; conv: ConversationDto }) 
       topic={conv.topic || conv.purpose}
       members={conv.memberIds.map((id) => userName(boot, id))}
       memberIds={conv.memberIds}
+      call={conv.isMember ? <CallButton conversationId={conv.id} dm={false} /> : undefined}
       onDetails={conv.isMember ? () => setDetails("about") : undefined}
       onMembers={conv.isMember ? () => setDetails("members") : undefined}
     />
@@ -287,6 +289,7 @@ function Conversation({ boot, conv }: { boot: BootDto; conv: ConversationDto }) 
         ) : undefined
       }
       topic={conv.kind === "group_dm" ? plural(conv.memberIds.length, "участник", "участника", "участников") : (people[0]?.title ?? "")}
+      call={self ? undefined : <CallButton conversationId={conv.id} dm />}
     />
   );
 

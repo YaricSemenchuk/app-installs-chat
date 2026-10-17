@@ -1,5 +1,5 @@
 // S03 — каркас: заголовок окна, сайдбар, баннер соединения, текущий экран.
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Navigate, Outlet, useNavigate, useParams } from "react-router";
 import { Bookmark, Compass, Download, FileStack, Hash, MessageSquareText, MonitorDown, Plus, SendHorizontal, UserPlus, Users } from "lucide-react";
 import { isAdminRole, isChannelKind, type BootDto, type ConversationDto } from "@teamchat/shared";
@@ -8,6 +8,8 @@ import { CreateChannelDialog } from "../channels/CreateChannelDialog";
 import { NewMessageDialog } from "../channels/NewMessageDialog";
 import { QuickSwitcher } from "../channels/QuickSwitcher";
 import { SearchDialog } from "../search/SearchDialog";
+import { IncomingCall } from "../calls/IncomingCall";
+import { useCalls } from "../calls/store";
 import { desktop } from "../desktop/bridge";
 import { NotifyBanner, UpdateBanner } from "../notifications/Banners";
 import { setNavigator } from "../notifications/notify";
@@ -25,6 +27,9 @@ import { ConnectionBanner, Skeleton } from "../ui/Feedback";
 import type { MenuEntry } from "../ui/Menu";
 import { Toaster } from "../ui/Toaster";
 import s from "./AppShell.module.scss";
+
+// LiveKit тяжёлый: грузим его, только когда начинается звонок.
+const CallWindow = lazy(() => import("../calls/CallWindow").then((m) => ({ default: m.CallWindow })));
 
 type Dialog = "invite" | "profile" | "preferences" | "channel" | "message" | "switcher" | "search" | null;
 
@@ -45,6 +50,8 @@ export function AppShell() {
   const navigate = useNavigate();
   const { conversationId } = useParams();
   const status = useConnection((x) => x.status);
+  const calls = useCalls((x) => x.byConversation);
+  const inCall = useCalls((x) => x.session !== null);
   const [dialog, setDialog] = useState<Dialog>(null);
   const dialogRef = useRef<Dialog>(null);
   dialogRef.current = dialog;
@@ -170,7 +177,7 @@ export function AppShell() {
                 key={c.id}
                 to={`/c/${c.id}`}
                 entry={{ kind: "channel", name: c.name ?? "", private: c.kind === "private" }}
-                state={{ selected: c.id === conversationId, unread: c.unreadCount > 0, mentions: c.mentionCount }}
+                state={{ selected: c.id === conversationId, unread: c.unreadCount > 0, mentions: c.mentionCount, call: Boolean(calls[c.id]) }}
               />
             ))}
             <SidebarItem entry={{ kind: "nav", label: "Все каналы", icon: <Hash /> }} to="/browse" />
@@ -181,7 +188,7 @@ export function AppShell() {
                 key={c.id}
                 to={`/c/${c.id}`}
                 entry={dmEntry(data, c)}
-                state={{ selected: c.id === conversationId, unread: c.unreadCount > 0, mentions: c.unreadCount }}
+                state={{ selected: c.id === conversationId, unread: c.unreadCount > 0, mentions: c.unreadCount, call: Boolean(calls[c.id]) }}
               />
             ))}
             {dms.length === 0 && (
@@ -218,6 +225,12 @@ export function AppShell() {
       <NewMessageDialog open={dialog === "message"} onOpenChange={close} />
       <QuickSwitcher open={dialog === "switcher"} onOpenChange={close} />
       <SearchDialog open={dialog === "search"} onOpenChange={close} />
+      {inCall && (
+        <Suspense fallback={null}>
+          <CallWindow />
+        </Suspense>
+      )}
+      <IncomingCall />
       <Toaster />
     </div>
   );

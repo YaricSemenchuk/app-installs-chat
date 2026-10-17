@@ -4,6 +4,8 @@ import { io, type Socket } from "socket.io-client";
 import { create } from "zustand";
 import {
   NOTIFICATION_EVENT,
+  CALL_EVENT,
+  type CallEventDto,
   SOCKET_PATH,
   type BootDto,
   type ConversationDto,
@@ -12,6 +14,7 @@ import {
   type PresenceEventDto,
 } from "@teamchat/shared";
 import { handleNotification } from "../notifications/notify";
+import { applyCallEvent, loadCalls } from "../calls/store";
 import { api } from "../api/http";
 import { adminUsersKey, bootKey, getBoot, queryClient, updateBoot, updateConversation, upsertUser } from "../data/boot";
 
@@ -162,7 +165,10 @@ export function startRealtime(initialEventId: number, onUnauthorized: () => void
   socket.on("connect", () => socket?.emit("hello", { lastEventId: Math.max(0, watermark - REPLAY_OVERLAP) }));
   socket.on("events", (batch: EventDto[]) => batch.forEach(apply));
   socket.on(NOTIFICATION_EVENT, (n: NotificationDto) => handleNotification(n));
+  socket.on(CALL_EVENT, (e: CallEventDto) => applyCallEvent(e));
   socket.on("synced", () => {
+    // Звонки эфемерны и в журнал не попадают: после (пере)подключения читаем их заново.
+    void loadCalls();
     clearTimeout(restoredTimer);
     if (wasOnline) {
       setStatus("restored");

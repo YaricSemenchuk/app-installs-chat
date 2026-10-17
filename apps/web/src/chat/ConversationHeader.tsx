@@ -11,6 +11,7 @@ export function ConversationHeader({
   topic,
   members,
   memberIds,
+  call,
   pins,
   bookmark,
   onDetails,
@@ -21,6 +22,7 @@ export function ConversationHeader({
   topic: string;
   members?: string[];
   memberIds?: string[];
+  call?: ReactNode; // кнопка звонка (calls/CallButton)
   pins?: number;
   bookmark?: string;
   onDetails?: () => void;
@@ -51,6 +53,7 @@ export function ConversationHeader({
           {topic}
         </p>
         <div className={s.actions}>
+          {call}
           {members && (
             <button type="button" className={s.members} aria-label={`Участники: ${members.length}`} onClick={onMembers}>
               <AvatarStack names={members} ids={memberIds} />
