@@ -99,7 +99,7 @@ feature,area,priority,original,clone,notes
 Новые сообщения появляются без перезагрузки,realtime,must,yes,yes,M0: socket.io
 Переподключение и догрузка пропущенного после обрыва,realtime,must,yes,yes,"M0: журнал events, hello{lastEventId}, баннер S43"
 Правки / удаления / реакции синхронизируются в реальном времени,realtime,must,yes,yes,"M3: события message.updated / message.deleted / reaction.* и сводки тредов, догон после обрыва; e2e и проверка вживую"
-Десктоп-приложение Electron для macOS и Windows,desktop,must,yes,partial,"M5: macOS собран (.dmg, universal, ad-hoc подпись) и проверен; установщики загружает админ в чате, коллеги скачивают на /download; Windows — в GitHub Actions, ещё не запускался"
+Десктоп-приложение Electron для macOS и Windows,desktop,must,yes,partial,"AppInstalls Chat 1.1.0: macOS (.dmg, universal, ad-hoc подпись) и Ubuntu (.deb) собраны; установщики загружает админ в чате, коллеги скачивают на /download; Windows — в GitHub Actions, ещё не запускался"
 Бейдж непрочитанного на иконке приложения,desktop,must,yes,yes,"M5: Dock на macOS, метка на значке в Windows, (N) в заголовке вкладки; те же числа, что в сайдбаре"
 Работа в трее / меню-баре при закрытом окне,desktop,should,yes,yes,"M5: закрытие прячет окно, меню трея — открыть, автозапуск, выйти"
 Диплинки на канал / ЛС / сообщение,desktop,should,yes,yes,"M5: teamchat://channel?id=, message?id= (в том числе ответ в треде), один экземпляр приложения"

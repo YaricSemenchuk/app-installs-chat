@@ -6,7 +6,7 @@ import path from "node:path";
 import { app, BrowserWindow, desktopCapturer, ipcMain, Menu, nativeImage, Notification, session, shell, Tray, type IpcMainEvent } from "electron";
 
 const PROTOCOL = "teamchat";
-const APP_ID = "app.promobile.chat";
+const APP_ID = "app.appinstalls.chat";
 const APP_URL = appUrl();
 const ORIGIN = new URL(APP_URL).origin;
 const ASSETS = path.join(__dirname, "..", "assets");
@@ -95,7 +95,7 @@ function createWindow() {
     height: 820,
     minWidth: 720,
     minHeight: 480,
-    title: "Promobile Chat",
+    title: "AppInstalls Chat",
     show: false,
     icon: path.join(ASSETS, "icon.png"),
     webPreferences: {
@@ -224,7 +224,7 @@ function setBadge(count: number) {
   } else {
     app.setBadgeCount(count); // Dock на macOS, лаунчер на Linux
   }
-  tray?.setToolTip(count > 0 ? `Promobile Chat — непрочитанных: ${count}` : "Promobile Chat");
+  tray?.setToolTip(count > 0 ? `AppInstalls Chat — непрочитанных: ${count}` : "AppInstalls Chat");
 }
 
 function createTray() {
@@ -233,10 +233,10 @@ function createTray() {
       ? nativeImage.createFromPath(path.join(ASSETS, "trayTemplate.png")) // template: macOS сам перекрасит под тему
       : nativeImage.createFromPath(path.join(ASSETS, "icon.png")).resize({ width: 16, height: 16 });
   tray = new Tray(icon);
-  tray.setToolTip("Promobile Chat");
+  tray.setToolTip("AppInstalls Chat");
   tray.setContextMenu(
     Menu.buildFromTemplate([
-      { label: "Открыть Promobile Chat", click: showWindow },
+      { label: "Открыть AppInstalls Chat", click: showWindow },
       // Только в собранном приложении: из разработки в автозагрузку попал бы сам Electron.
       ...(app.isPackaged
         ? [

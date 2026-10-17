@@ -211,3 +211,16 @@
   звонок идёт; без медиасервера — понятная ошибка вместо английской.
 
 Не проверено: звук, видео и показ экрана через настоящий LiveKit; Electron с камерой и микрофоном.
+
+## AppInstalls Chat 1.1.0: Ubuntu и новый знак (2026-10-17)
+
+| ID | дата | статус | чего не хватает | сложнее, чем казалось |
+| --- | --- | --- | --- | --- |
+| desktop | 2026-10-17 | done | AppImage (нужен Rosetta), Windows | приложение называется AppInstalls Chat (`app.appinstalls.chat`, файлы `appinstallschat-*`), иконки — из знака AppInstalls генератором `scripts/build-icons.mjs`. Смена appId — это новое приложение для macOS: вход и разрешения спросит заново. Версия 1.1.0, чтобы у старой 1.0.0 появился баннер обновления |
+| Ubuntu | 2026-10-17 | partial | не устанавливался на настоящей Ubuntu | `.deb` собирается на Apple Silicon: electron-builder 26 сам качает `fpm` под arm64; Rosetta нужен только AppImage. В админке и на /download — третья система, сервер проверяет, что это ar-архив |
+
+Проверено: `.dmg` подписан ad-hoc и проходит `codesign --verify --deep --strict`, внутри адрес продакшена и пояснения
+для камеры и микрофона; `.deb` разобран — control, postinst (update-alternatives, песочница, AppArmor), ярлык с
+`x-scheme-handler/teamchat`, иконки 16–512. `npm test`: 9 юнит и 60 e2e (Ubuntu: `.deb` принимается, подделка и
+чужое расширение — нет).
+
