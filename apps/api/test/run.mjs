@@ -47,6 +47,7 @@ const env = {
   JIRA_BASE_URL: `http://localhost:${JIRA_PORT}`,
   JIRA_EMAIL: "jira-bot@promobile.test",
   JIRA_API_TOKEN: "e2e-jira-token",
+  JIRA_HIDDEN_STATUSES: "verify prod, No such status",
   FIGMA_TOKEN: "e2e-figma-token",
   FIGMA_API_URL: `http://localhost:${FIGMA_PORT}`,
   // Файлы e2e кладут на диск в отдельный каталог, он пересоздаётся при каждом запуске.

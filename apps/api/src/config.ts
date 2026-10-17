@@ -68,6 +68,17 @@ const Env = z.object({
     .string()
     .optional()
     .transform((v) => (v ? v : undefined)),
+  // Статусы Jira, которые не показываем ни в «Моих задачах», ни в каналах, через запятую. Обычно это этапы после
+  // разработки, у которых в Jira категория «к выполнению»: «Ready for deploy, Verify prod». Регистр не важен.
+  JIRA_HIDDEN_STATUSES: z
+    .string()
+    .default("")
+    .transform((s) =>
+      s
+        .split(",")
+        .map((v) => v.trim())
+        .filter(Boolean),
+    ),
   // Макеты Figma: персональный токен (Settings → Security → Personal access tokens) с правами
   // file_content:read и file_comments:read. Без него превью и правки по дизайну выключены.
   FIGMA_TOKEN: z

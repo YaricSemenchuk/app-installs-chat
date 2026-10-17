@@ -17,6 +17,7 @@ import { config } from "../config.js";
 const PAGE_SIZE = 100;
 const TIMEOUT_MS = 15_000;
 const SEARCH_TTL_MS = 30_000;
+const STATUSES_TTL_MS = 60 * 60_000;
 const PROJECTS_TTL_MS = 10 * 60_000;
 const ACCOUNT_TTL_MS = 60 * 60_000;
 const ACCOUNT_MISS_TTL_MS = 10 * 60_000;
@@ -134,6 +135,7 @@ export class JiraService {
   private readonly cache = new Map<string, { at: number; ttl: number; value: Promise<unknown> }>();
   // accountId → почта, под которой его нашли: так у исполнителя появляется аватар из чата, даже если Jira прячет почту.
   private readonly emailByAccount = new Map<string, string>();
+  private readonly warned = new Set<string>();
 
   get enabled(): boolean {
     return this.auth !== null && config.JIRA_BASE_URL !== undefined;
@@ -149,7 +151,9 @@ export class JiraService {
 
   // Задачи по JQL, не больше JIRA_ISSUES_MAX. В jql уже нет ORDER BY (см. stripOrderBy).
   async issues(jql: string, resolve: ResolvePerson): Promise<{ issues: JiraIssueDto[]; truncated: boolean }> {
-    const raw = await this.cached(`search:${jql}`, SEARCH_TTL_MS, () => this.searchAll(`${jql} ORDER BY priority DESC, updated DESC`));
+    const hidden = await this.hiddenStatuses();
+    const full = hidden ? `${jql} AND ${hidden}` : jql;
+    const raw = await this.cached(`search:${full}`, SEARCH_TTL_MS, () => this.searchAll(`${full} ORDER BY priority DESC, updated DESC`));
     return { issues: raw.issues.map((i) => this.toIssue(i, resolve)), truncated: raw.truncated };
   }
 
@@ -195,6 +199,33 @@ export class JiraService {
       (ok) => (ok ? MYSELF_TTL_MS : 0),
     );
     return allowed ? null : "Служебному аккаунту Jira нужно глобальное право «Browse users and groups»: без него Jira не находит людей по почте";
+  }
+
+  // Условие, которое прячет статусы из JIRA_HIDDEN_STATUSES. Названия сверяем со статусами Jira: несуществующий
+  // статус в JQL — ошибка 400, и из-за опечатки в настройке пропали бы все списки. Такие названия пропускаем.
+  private async hiddenStatuses(): Promise<string> {
+    const wanted = config.JIRA_HIDDEN_STATUSES;
+    if (wanted.length === 0) return "";
+    // В разных процессах Jira бывают статусы с одним названием в разном регистре («VERIFY PROD» и «Verify PROD»): берём все.
+    const known = await this.cached("statuses", STATUSES_TTL_MS, async () => {
+      const statuses = await this.request<{ name: string }[]>("/rest/api/3/status");
+      const byName = new Map<string, string[]>();
+      for (const st of statuses) byName.set(st.name.trim().toLowerCase(), [...(byName.get(st.name.trim().toLowerCase()) ?? []), st.name]);
+      return byName;
+    });
+    const names = wanted.flatMap((w) => {
+      const variants = known.get(w.toLowerCase()) ?? [];
+      if (variants.length === 0) this.warnOnce(`hidden:${w}`, `JIRA_HIDDEN_STATUSES: в Jira нет статуса ${JSON.stringify(w)}, пропускаем`);
+      return variants;
+    });
+    if (names.length === 0) return "";
+    return `status NOT IN (${[...new Set(names)].map((n) => `"${n.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(", ")})`;
+  }
+
+  private warnOnce(key: string, text: string): void {
+    if (this.warned.has(key)) return;
+    this.warned.add(key);
+    this.log.warn(text);
   }
 
   // Что запросить для «Моих задач». accountId вставляется в JQL, поэтому проверяем его формат.
