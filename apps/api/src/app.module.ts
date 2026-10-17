@@ -6,6 +6,7 @@ import { MailService } from "./auth/mail.service.js";
 import { SessionGuard } from "./auth/session.guard.js";
 import { BootstrapService } from "./bootstrap.service.js";
 import { ConversationsController } from "./conversations/conversations.controller.js";
+import { MessagesController } from "./conversations/messages.controller.js";
 import { ConversationsService } from "./conversations/conversations.service.js";
 import { MessagesService } from "./conversations/messages.service.js";
 import { MembershipService } from "./conversations/membership.service.js";
@@ -21,7 +22,7 @@ import { UsersController } from "./users/users.controller.js";
 import { UsersService } from "./users/users.service.js";
 
 @Module({
-  controllers: [AuthController, ConversationsController, InvitesController, UsersController, HealthController],
+  controllers: [AuthController, ConversationsController, MessagesController, InvitesController, UsersController, HealthController],
   providers: [
     PrismaService,
     MailService,

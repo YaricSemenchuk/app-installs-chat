@@ -6,6 +6,7 @@ import type {
   EventDto,
   InviteDto,
   MessageDto,
+  ReactionDto,
   Role,
   UserDto,
 } from "@teamchat/shared";
@@ -46,7 +47,24 @@ export function toInviteDto(i: invites): InviteDto {
   };
 }
 
-export function toMessageDto(m: messages, mentions: string[] = []): MessageDto {
+type ReactionRow = { emoji: string; user_id: string; created_at: Date };
+
+// Реакции одной кнопкой на эмодзи: эмодзи — в порядке первой реакции, люди — в порядке, как ставили.
+export function groupReactions(rows: ReactionRow[]): ReactionDto[] {
+  const byEmoji = new Map<string, string[]>();
+  for (const r of [...rows].sort((a, b) => a.created_at.getTime() - b.created_at.getTime())) {
+    const list = byEmoji.get(r.emoji) ?? [];
+    list.push(r.user_id);
+    byEmoji.set(r.emoji, list);
+  }
+  return [...byEmoji].map(([emoji, userIds]) => ({ emoji, userIds }));
+}
+
+// Что приходит из базы вместе с сообщением (см. MESSAGE_INCLUDE в messages.service).
+export type MessageRow = messages & { message_mentions?: { user_id: string }[]; reactions?: ReactionRow[] };
+
+export function toMessageDto(m: MessageRow, mentions?: string[]): MessageDto {
+  const deleted = m.deleted_at !== null;
   return {
     id: m.id,
     seq: Number(m.seq),
@@ -54,10 +72,17 @@ export function toMessageDto(m: messages, mentions: string[] = []): MessageDto {
     userId: m.user_id,
     clientMsgId: m.client_msg_id,
     subtype: m.subtype,
-    text: m.deleted_at ? "" : m.text,
-    mentions,
+    text: deleted ? "" : m.text,
+    mentions: deleted ? [] : (mentions ?? m.message_mentions?.map((x) => x.user_id) ?? []),
     createdAt: m.created_at.toISOString(),
     editedAt: m.edited_at?.toISOString() ?? null,
+    deleted,
+    parentId: m.parent_id,
+    alsoInChannel: m.also_in_channel,
+    replyCount: m.reply_count,
+    replyUserIds: m.reply_user_ids,
+    lastReplyAt: m.last_reply_at?.toISOString() ?? null,
+    reactions: deleted ? [] : groupReactions(m.reactions ?? []),
   };
 }
 
@@ -75,12 +100,23 @@ export function toConversationInfoDto(c: conversations): ConversationInfoDto {
   };
 }
 
+// Поля сообщения, которых не было в событиях, записанных раньше (M0–M2): журнал догоняют как есть,
+// поэтому недостающее подставляем здесь, на границе контракта.
+const MESSAGE_DEFAULTS: Omit<MessageDto, "id" | "seq" | "conversationId" | "userId" | "clientMsgId" | "subtype" | "text" | "createdAt" | "editedAt"> = {
+  mentions: [],
+  deleted: false,
+  parentId: null,
+  alsoInChannel: false,
+  replyCount: 0,
+  replyUserIds: [],
+  lastReplyAt: null,
+  reactions: [],
+};
+
 export function toEventDto(e: events): EventDto {
-  // В журнале лежат и события до M2, где у сообщения ещё не было mentions: при догоне их отдают как есть.
+  const isMessage = e.kind === "message.created" || e.kind === "message.updated";
   const payload =
-    e.kind === "message.created" && e.payload && typeof e.payload === "object" && !Array.isArray(e.payload)
-      ? { mentions: [], ...e.payload }
-      : e.payload;
+    isMessage && e.payload && typeof e.payload === "object" && !Array.isArray(e.payload) ? { ...MESSAGE_DEFAULTS, ...e.payload } : e.payload;
   const base = { id: Number(e.id), kind: e.kind, payload };
   if (e.conversation_id) return { ...base, conversationId: e.conversation_id } as EventDto;
   if (e.user_id) return { ...base, userId: e.user_id } as EventDto;

@@ -29,12 +29,14 @@ export class ConversationsService {
     private readonly presence: PresenceService,
   ) {}
 
-  // Непрочитанное и упоминания по моим разговорам одним запросом.
+  // Непрочитанное и упоминания по моим разговорам одним запросом. Считается только лента:
+  // ответы в тредах счётчики канала не трогают (кроме «также в канал»).
   private counts(userId: string, conversationId?: string) {
     return this.prisma.$queryRaw<CountsRow[]>`
       select cm.conversation_id,
              cm.last_read_seq,
-             coalesce((select max(m.seq) from messages m where m.conversation_id = cm.conversation_id), 0) as latest_seq,
+             coalesce((select max(m.seq) from messages m
+                        where m.conversation_id = cm.conversation_id and (m.parent_id is null or m.also_in_channel)), 0) as latest_seq,
              (select count(*) from messages m
                where m.conversation_id = cm.conversation_id
                  and m.seq > cm.last_read_seq
@@ -46,6 +48,7 @@ export class ConversationsService {
                where mm.user_id = cm.user_id
                  and m.conversation_id = cm.conversation_id
                  and m.seq > cm.last_read_seq
+                 and (m.parent_id is null or m.also_in_channel)
                  and m.deleted_at is null) as mentions
         from conversation_members cm
        where cm.user_id = ${userId}::uuid
@@ -89,7 +92,11 @@ export class ConversationsService {
 
     return {
       me: toUserDto(me),
-      workspace: { name: ws.name, whoCanInvite: ws.who_can_invite === "admins" ? "admins" : "everyone" },
+      workspace: {
+        name: ws.name,
+        whoCanInvite: ws.who_can_invite === "admins" ? "admins" : "everyone",
+        messageEditWindowMinutes: ws.message_edit_window_minutes,
+      },
       users: users.map(toUserDto),
       conversations,
       presence: this.presence.snapshot(),
