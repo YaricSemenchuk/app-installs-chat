@@ -7,9 +7,10 @@ import { after, before, describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { BASE, DOMAIN, call, closeSockets, login, run } from "./helpers.mjs";
 
-// Похожие на настоящие: у .dmg в конце 512-байтный блок «koly», .exe начинается с «MZ».
+// Похожие на настоящие: у .dmg в конце 512-байтный блок «koly», .exe начинается с «MZ», .deb — ar-архив.
 const dmg = () => Buffer.concat([randomBytes(5000), Buffer.from("koly"), Buffer.alloc(508)]);
 const exe = () => Buffer.concat([Buffer.from("MZ"), randomBytes(3000)]);
+const deb = () => Buffer.concat([Buffer.from("!<arch>\n"), randomBytes(3000)]);
 
 const put = (cookie, platform, bytes, name, version) =>
   fetch(`${BASE}/api/admin/desktop/${platform}?${new URLSearchParams({ name, version })}`, {
@@ -31,11 +32,11 @@ describe("desktop installers", () => {
 
   test("an admin uploads, everyone signed in sees and downloads", async () => {
     assert.equal((await call(null, "GET", "/api/desktop")).status, 401, "not for strangers");
-    assert.deepEqual((await call(anna, "GET", "/api/desktop")).body, { mac: null, win: null });
+    assert.deepEqual((await call(anna, "GET", "/api/desktop")).body, { mac: null, win: null, linux: null });
 
     firstMac = dmg();
-    assert.equal((await put(anna, "mac", firstMac, "PromobileChat-1.0.2-mac.dmg", "1.0.2")).status, 403, "members cannot upload");
-    const res = await put(owner, "mac", firstMac, "PromobileChat-1.0.2-mac.dmg", "1.0.2");
+    assert.equal((await put(anna, "mac", firstMac, "appinstallschat-1.0.2-mac.dmg", "1.0.2")).status, 403, "members cannot upload");
+    const res = await put(owner, "mac", firstMac, "appinstallschat-1.0.2-mac.dmg", "1.0.2");
     assert.equal(res.status, 200, await res.clone().text());
     const mac = await res.json();
     assert.equal(mac.platform, "mac");
@@ -49,17 +50,19 @@ describe("desktop installers", () => {
 
     const file = await get(anna, mac.url);
     assert.equal(file.status, 200);
-    assert.match(file.headers.get("content-disposition"), /^attachment; filename="PromobileChat-1\.0\.2-mac\.dmg"/);
+    assert.match(file.headers.get("content-disposition"), /^attachment; filename="appinstallschat-1\.0\.2-mac\.dmg"/);
     assert.ok(Buffer.from(await file.arrayBuffer()).equals(firstMac));
     assert.equal((await get(null, mac.url)).status, 401);
     assert.equal((await get(anna, "/api/desktop/linux/download")).status, 404);
   });
 
   test("only a real installer of the right kind", async () => {
-    assert.equal((await put(owner, "mac", dmg(), "PromobileChat.zip", "1.0.9")).status, 400, "extension");
-    assert.equal((await put(owner, "mac", exe(), "PromobileChat-1.0.9-mac.dmg", "1.0.9")).status, 400, "an .exe renamed to .dmg");
-    assert.equal((await put(owner, "win", dmg(), "PromobileChat-1.0.9-win.exe", "1.0.9")).status, 400, "a .dmg renamed to .exe");
-    assert.equal((await put(owner, "mac", dmg(), "PromobileChat-1.0-mac.dmg", "1.0")).status, 400, "version");
+    assert.equal((await put(owner, "mac", dmg(), "appinstallschat.zip", "1.0.9")).status, 400, "extension");
+    assert.equal((await put(owner, "mac", exe(), "appinstallschat-1.0.9-mac.dmg", "1.0.9")).status, 400, "an .exe renamed to .dmg");
+    assert.equal((await put(owner, "win", dmg(), "appinstallschat-1.0.9-win.exe", "1.0.9")).status, 400, "a .dmg renamed to .exe");
+    assert.equal((await put(owner, "linux", exe(), "appinstallschat-1.0.9-linux.deb", "1.0.9")).status, 400, "an .exe renamed to .deb");
+    assert.equal((await put(owner, "linux", deb(), "appinstallschat-1.0.9-linux.AppImage", "1.0.9")).status, 400, "Ubuntu takes .deb");
+    assert.equal((await put(owner, "mac", dmg(), "appinstallschat-1.0-mac.dmg", "1.0")).status, 400, "version");
 
     // Заявленный размер больше лимита — отказ сразу, тело не ждём.
     const status = await new Promise((resolve, reject) => {
@@ -79,10 +82,14 @@ describe("desktop installers", () => {
   });
 
   test("a new version replaces the old one; delete removes it", async () => {
-    const win = await put(owner, "win", exe(), "PromobileChat-1.0.2-win.exe", "1.0.2");
+    const win = await put(owner, "win", exe(), "appinstallschat-1.0.2-win.exe", "1.0.2");
     assert.equal(win.status, 200);
+    const linux = await put(owner, "linux", deb(), "appinstallschat-1.0.2-linux.deb", "1.0.2");
+    assert.equal(linux.status, 200, await linux.clone().text());
+    const pkg = await get(anna, "/api/desktop/linux/download");
+    assert.equal(pkg.headers.get("content-type"), "application/vnd.debian.binary-package");
     const next = dmg();
-    assert.equal((await put(owner, "mac", next, "PromobileChat-1.0.3-mac.dmg", "1.0.3")).status, 200);
+    assert.equal((await put(owner, "mac", next, "appinstallschat-1.0.3-mac.dmg", "1.0.3")).status, 200);
     const info = (await call(anna, "GET", "/api/desktop")).body;
     assert.deepEqual([info.mac.version, info.win.version], ["1.0.3", "1.0.2"]);
     assert.ok(Buffer.from(await (await get(anna, info.mac.url)).arrayBuffer()).equals(next));

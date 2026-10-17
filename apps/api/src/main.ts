@@ -13,7 +13,7 @@ import { config, isProd } from "./config.js";
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 // Байты файла приходят как есть. Это PUT: кросс-сайтом без CORS-preflight браузер его не отправит.
-const RAW_UPLOAD = /^\/api\/(files\/[0-9a-f-]{36}\/content|admin\/desktop\/(mac|win))$/;
+const RAW_UPLOAD = /^\/api\/(files\/[0-9a-f-]{36}\/content|admin\/desktop\/(mac|win|linux))$/;
 
 // Изменяющие запросы принимаем только как JSON: обычная HTML-форма с чужого сайта так не отправит.
 // POST — всегда JSON (форма умеет только GET/POST); DELETE/PUT/PATCH без тела браузер кросс-сайтом

@@ -23,16 +23,20 @@ import type { users } from "../generated/prisma/client.js";
 const CONTENT_TYPE: Record<DesktopPlatform, string> = {
   mac: "application/x-apple-diskimage",
   win: "application/vnd.microsoft.portable-executable",
+  linux: "application/vnd.debian.binary-package",
 };
 const NOT_INSTALLER: Record<DesktopPlatform, string> = {
   mac: "Это не образ диска macOS (.dmg)",
   win: "Это не программа для Windows (.exe)",
+  linux: "Это не пакет для Ubuntu (.deb)",
 };
 
-// Проверка по содержимому, а не только по имени: .exe начинается с «MZ»,
+// Проверка по содержимому, а не только по имени: .exe начинается с «MZ», .deb — это ar-архив («!<arch>\n»),
 // у образа .dmg (UDIF) последние 512 байт — служебный блок с подписью «koly».
+const HEAD_BYTES = 8;
 function looksLike(platform: DesktopPlatform, head: Buffer, tail: Buffer): boolean {
   if (platform === "win") return head.subarray(0, 2).toString("latin1") === "MZ";
+  if (platform === "linux") return head.subarray(0, 8).toString("latin1") === "!<arch>\n";
   return tail.length === 512 && tail.subarray(0, 4).toString("latin1") === "koly";
 }
 
@@ -46,7 +50,7 @@ export class InstallersService {
   ) {}
 
   async info(): Promise<DesktopInfoDto> {
-    const info: DesktopInfoDto = { mac: null, win: null };
+    const info: DesktopInfoDto = { mac: null, win: null, linux: null };
     for (const row of await this.prisma.desktop_installers.findMany()) info[row.platform as DesktopPlatform] = toInstallerDto(row);
     return info;
   }
@@ -71,7 +75,7 @@ export class InstallersService {
           done(new PayloadTooLargeException("Файл больше заявленного размера"));
           return;
         }
-        if (head.length < 2) head = Buffer.concat([head, chunk.subarray(0, 2 - head.length)]);
+        if (head.length < HEAD_BYTES) head = Buffer.concat([head, chunk.subarray(0, HEAD_BYTES - head.length)]);
         // Копия, а не срез: срез держал бы в памяти весь кусок потока.
         tail = chunk.length >= 512 ? Buffer.from(chunk.subarray(-512)) : Buffer.concat([tail, chunk]).subarray(-512);
         done(null, chunk);

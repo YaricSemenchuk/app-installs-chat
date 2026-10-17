@@ -113,12 +113,12 @@ export type DesktopExchangeInput = z.infer<typeof DesktopExchangeInput>;
 export const isDesktopChallenge = (v: unknown): v is string => typeof v === "string" && B64URL_43.test(v);
 
 // Десктоп-приложение: установщики загружает администратор, вошедшие скачивают на /download.
-export const DESKTOP_PLATFORMS = ["mac", "win"] as const;
+export const DESKTOP_PLATFORMS = ["mac", "win", "linux"] as const;
 export type DesktopPlatform = (typeof DESKTOP_PLATFORMS)[number];
-export const INSTALLER_EXT: Record<DesktopPlatform, string> = { mac: ".dmg", win: ".exe" };
+export const INSTALLER_EXT: Record<DesktopPlatform, string> = { mac: ".dmg", win: ".exe", linux: ".deb" }; // Ubuntu: .deb ставится двойным щелчком
 export const MAX_INSTALLER_BYTES = 512 * 1024 * 1024; // универсальный .dmg — около 230 МБ
 export const DesktopVersion = z.string().regex(/^\d{1,4}\.\d{1,4}\.\d{1,4}$/, "Версия вида 1.0.2");
-// Версия из имени сборки: PromobileChat-1.0.2-mac.dmg → 1.0.2.
+// Версия из имени сборки: appinstallschat-1.0.2-mac.dmg → 1.0.2.
 export const versionFromName = (name: string): string | null => name.match(/\d{1,4}\.\d{1,4}\.\d{1,4}/)?.[0] ?? null;
 // Байты установщика идут телом PUT, имя и версия — в адресе.
 export const UploadInstallerQuery = z.object({ version: DesktopVersion, name: z.string().trim().min(1).max(200) });
