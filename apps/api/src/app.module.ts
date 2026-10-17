@@ -14,6 +14,7 @@ import { PrismaService } from "./db/prisma.service.js";
 import { FilesController } from "./files/files.controller.js";
 import { FilesService } from "./files/files.service.js";
 import { StorageService } from "./files/storage.js";
+import { AvatarService } from "./files/avatar.service.js";
 import { HealthController } from "./health.controller.js";
 import { NotificationsController } from "./notifications/notifications.controller.js";
 import { NotificationsService } from "./notifications/notifications.service.js";
@@ -46,6 +47,7 @@ import { UsersService } from "./users/users.service.js";
     ConversationsService,
     MessagesService,
     StorageService,
+    AvatarService,
     PreferencesService,
     NotificationsService,
     FilesService,

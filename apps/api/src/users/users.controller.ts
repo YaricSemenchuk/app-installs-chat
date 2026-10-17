@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Res, UseGuards } from "@nestjs/common";
+import type { Response } from "express";
 import { OnboardingInput, ProfileInput, RoleChangeInput, type AdminUserDto, type UserDto } from "@teamchat/shared";
 import { CurrentUser, SessionGuard } from "../auth/session.guard.js";
 import { ZodPipe } from "../common/zod.pipe.js";
@@ -18,6 +19,23 @@ export class UsersController {
   @Patch("me/profile")
   profile(@CurrentUser() me: users, @Body(new ZodPipe(ProfileInput)) body: ProfileInput): Promise<UserDto> {
     return this.users.updateProfile(me, body);
+  }
+
+  @Get("users/:id/avatar")
+  async avatar(@Param("id", new ParseUUIDPipe()) id: string, @Res() res: Response) {
+    const d = await this.users.avatar(id);
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    if ("redirect" in d) {
+      res.setHeader("Cache-Control", "private, max-age=240");
+      res.redirect(302, d.redirect);
+      return;
+    }
+    // Адрес версионирован (?v=), поэтому кешируем надолго.
+    res.setHeader("Content-Type", "image/webp");
+    res.setHeader("Content-Length", String(d.size));
+    res.setHeader("Cache-Control", "private, max-age=31536000, immutable");
+    d.stream.on("error", () => res.destroy());
+    d.stream.pipe(res);
   }
 
   @Get("admin/users")

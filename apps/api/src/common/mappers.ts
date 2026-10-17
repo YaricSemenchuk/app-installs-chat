@@ -1,4 +1,5 @@
 // Строки БД (snake_case, BigInt, Date) → DTO контракта из @teamchat/shared.
+import { createHash } from "node:crypto";
 import type {
   AdminUserDto,
   ConversationInfoDto,
@@ -12,6 +13,9 @@ import type {
   UserDto,
 } from "@teamchat/shared";
 import type { conversations, events, files, invites, messages, users } from "../generated/prisma/client.js";
+
+// Версия в адресе аватара — от ключа объекта: новое фото → новый адрес, старое можно кешировать надолго.
+const avatarUrl = (u: users) => (u.avatar_key ? `/api/users/${u.id}/avatar?v=${createHash("sha1").update(u.avatar_key).digest("hex").slice(0, 12)}` : null);
 
 export function toUserDto(u: users): UserDto {
   return {
@@ -27,6 +31,7 @@ export function toUserDto(u: users): UserDto {
     statusEmoji: u.status_emoji,
     deactivated: u.deactivated_at !== null,
     onboarded: u.onboarded_at !== null,
+    avatarUrl: avatarUrl(u),
   };
 }
 

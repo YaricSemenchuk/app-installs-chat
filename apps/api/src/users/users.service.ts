@@ -17,8 +17,12 @@ import type { users } from "../generated/prisma/client.js";
 import { EventsService } from "../realtime/events.service.js";
 import { RealtimeHub } from "../realtime/hub.service.js";
 import { PresenceService } from "../realtime/presence.service.js";
+import { AvatarService } from "../files/avatar.service.js";
+import { StorageService } from "../files/storage.js";
 
-type UserPatch = Partial<Pick<users, "display_name" | "real_name" | "title" | "pronouns" | "tz" | "role" | "onboarded_at" | "deactivated_at">>;
+type UserPatch = Partial<
+  Pick<users, "display_name" | "real_name" | "title" | "pronouns" | "tz" | "role" | "onboarded_at" | "deactivated_at" | "avatar_key">
+>;
 
 @Injectable()
 export class UsersService {
@@ -28,6 +32,8 @@ export class UsersService {
     private readonly hub: RealtimeHub,
     private readonly membership: MembershipService,
     private readonly presence: PresenceService,
+    private readonly avatars: AvatarService,
+    private readonly storage: StorageService,
   ) {}
 
   // Изменение человека + событие user.updated для всех, в одной транзакции.
@@ -43,25 +49,40 @@ export class UsersService {
   }
 
   async onboard(me: users, input: OnboardingInput): Promise<UserDto> {
+    const avatar = input.avatarFileId ? await this.avatars.fromFile(me, input.avatarFileId) : undefined;
     const user = await this.update(me.id, {
       display_name: input.displayName,
       real_name: input.realName,
       title: input.title,
       tz: validTimeZone(input.tz) ?? me.tz,
       onboarded_at: me.onboarded_at ?? new Date(),
+      ...(avatar && { avatar_key: avatar }),
     });
+    if (avatar) await this.avatars.drop(me.avatar_key);
     return toUserDto(user);
   }
 
+  // avatarFileId: id картинки — новое фото, null — убрать, не передан — не трогать.
   async updateProfile(me: users, input: ProfileInput): Promise<UserDto> {
+    const avatar =
+      input.avatarFileId === undefined ? undefined : input.avatarFileId === null ? null : await this.avatars.fromFile(me, input.avatarFileId);
     const user = await this.update(me.id, {
       display_name: input.displayName,
       real_name: input.realName,
       title: input.title,
       pronouns: input.pronouns,
       tz: validTimeZone(input.tz),
+      ...(avatar !== undefined && { avatar_key: avatar }),
     });
+    if (avatar !== undefined) await this.avatars.drop(me.avatar_key);
     return toUserDto(user);
+  }
+
+  // Фото видят все в пространстве, кто вошёл: оно же на каждом сообщении человека.
+  async avatar(id: string) {
+    const u = await this.prisma.users.findUnique({ where: { id }, select: { avatar_key: true } });
+    if (!u?.avatar_key) throw new NotFoundException("Фото нет");
+    return this.storage.deliver(u.avatar_key, { contentType: "image/webp", disposition: 'inline; filename="avatar.webp"' });
   }
 
   // ───────────── администрирование ─────────────

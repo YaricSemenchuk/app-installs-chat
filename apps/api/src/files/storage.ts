@@ -3,7 +3,7 @@
 //   disk — каталог STORAGE_DIR для разработки и e2e: скачивание идёт потоком через API.
 // Ключи объектов генерирует только сервер (files/<uuid>/…), из пользовательского ввода они не собираются.
 import { createReadStream, createWriteStream } from "node:fs";
-import { mkdir, rm, stat } from "node:fs/promises";
+import { mkdir, readFile, rm, stat } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import type { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
@@ -19,6 +19,7 @@ export type DeliverOptions = { contentType: string; disposition: string };
 export interface StorageDriver {
   put(key: string, body: Readable, contentType: string): Promise<void>;
   putBuffer(key: string, body: Buffer, contentType: string): Promise<void>;
+  getBuffer(key: string): Promise<Buffer>; // только для небольших объектов (миниатюры)
   remove(keys: string[]): Promise<void>;
   deliver(key: string, opts: DeliverOptions): Promise<Delivery>;
 }
@@ -44,6 +45,10 @@ class DiskDriver implements StorageDriver {
     const p = this.path(key);
     await mkdir(dirname(p), { recursive: true });
     await pipeline([body], createWriteStream(p));
+  }
+
+  async getBuffer(key: string) {
+    return readFile(this.path(key));
   }
 
   async remove(keys: string[]) {
@@ -83,6 +88,11 @@ class S3Driver implements StorageDriver {
     await new Upload({ client: this.client, params: { Bucket: this.bucket, Key: key, Body: body, ContentType: contentType } }).done();
   }
 
+  async getBuffer(key: string) {
+    const res = await this.client.send(new GetObjectCommand({ Bucket: this.bucket, Key: key }));
+    return Buffer.from(await res.Body!.transformToByteArray());
+  }
+
   async remove(keys: string[]) {
     if (keys.length === 0) return;
     await this.client.send(new DeleteObjectsCommand({ Bucket: this.bucket, Delete: { Objects: keys.map((Key) => ({ Key })) } }));
@@ -108,6 +118,9 @@ export class StorageService implements StorageDriver {
   }
   putBuffer(key: string, body: Buffer, contentType: string) {
     return this.driver.putBuffer(key, body, contentType);
+  }
+  getBuffer(key: string) {
+    return this.driver.getBuffer(key);
   }
   remove(keys: string[]) {
     return this.driver.remove(keys);
