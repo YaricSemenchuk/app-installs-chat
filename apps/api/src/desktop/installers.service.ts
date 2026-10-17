@@ -24,19 +24,23 @@ const CONTENT_TYPE: Record<DesktopPlatform, string> = {
   mac: "application/x-apple-diskimage",
   win: "application/vnd.microsoft.portable-executable",
   linux: "application/vnd.debian.binary-package",
+  arch: "application/zstd",
 };
 const NOT_INSTALLER: Record<DesktopPlatform, string> = {
   mac: "Это не образ диска macOS (.dmg)",
   win: "Это не программа для Windows (.exe)",
   linux: "Это не пакет для Ubuntu (.deb)",
+  arch: "Это не пакет для Arch Linux (.pkg.tar.zst)",
 };
 
 // Проверка по содержимому, а не только по имени: .exe начинается с «MZ», .deb — это ar-архив («!<arch>\n»),
+// пакет pacman сжат zstd (кадр начинается с 28 B5 2F FD),
 // у образа .dmg (UDIF) последние 512 байт — служебный блок с подписью «koly».
 const HEAD_BYTES = 8;
 function looksLike(platform: DesktopPlatform, head: Buffer, tail: Buffer): boolean {
   if (platform === "win") return head.subarray(0, 2).toString("latin1") === "MZ";
   if (platform === "linux") return head.subarray(0, 8).toString("latin1") === "!<arch>\n";
+  if (platform === "arch") return head.subarray(0, 4).equals(Buffer.from([0x28, 0xb5, 0x2f, 0xfd]));
   return tail.length === 512 && tail.subarray(0, 4).toString("latin1") === "koly";
 }
 
@@ -50,7 +54,7 @@ export class InstallersService {
   ) {}
 
   async info(): Promise<DesktopInfoDto> {
-    const info: DesktopInfoDto = { mac: null, win: null, linux: null };
+    const info: DesktopInfoDto = { mac: null, win: null, linux: null, arch: null };
     for (const row of await this.prisma.desktop_installers.findMany()) info[row.platform as DesktopPlatform] = toInstallerDto(row);
     return info;
   }

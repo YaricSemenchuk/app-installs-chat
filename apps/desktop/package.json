@@ -79,6 +79,12 @@
           "arch": [
             "x64"
           ]
+        },
+        {
+          "target": "pacman",
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "build/icons",
@@ -91,6 +97,20 @@
           "StartupWMClass": "AppInstalls Chat"
         }
       }
+    },
+    "pacman": {
+      "artifactName": "appinstallschat-${version}-x86_64.pkg.tar.zst",
+      "compression": "zstd",
+      "depends": [
+        "gtk3",
+        "nss",
+        "alsa-lib",
+        "libxss",
+        "libxtst",
+        "libnotify",
+        "xdg-utils",
+        "libsecret"
+      ]
     },
     "artifactName": "appinstallschat-${version}-${os}.${ext}"
   }

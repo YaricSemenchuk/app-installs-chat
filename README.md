@@ -132,12 +132,13 @@ TEAMCHAT_URL=https://chat.example.com npm run dist:mac
 
 Ubuntu: `TEAMCHAT_URL=… npm run dist:linux` собирает `appinstallschat-<версия>-linux.deb` (x64) прямо на Mac,
 Rosetta не нужен. Пакет ставит приложение в `/opt/AppInstalls Chat`, ярлык с иконкой и обработчик ссылок
-`teamchat://`, а для Ubuntu 24 — профиль AppArmor для песочницы Chromium.
+`teamchat://`, а для Ubuntu 24 — профиль AppArmor для песочницы Chromium. Та же команда собирает пакет для Arch
+Linux: `appinstallschat-<версия>-x86_64.pkg.tar.zst`, ставится `sudo pacman -U ./…pkg.tar.zst`.
 
 Иконки — из знака AppInstalls (`brand/appinstalls-mark.svg`): `node scripts/build-icons.mjs` пересобирает фавикон,
 иконку для iPhone, иконки приложения для macOS, Linux и Windows и значок в строке меню.
 
-Готовые `.dmg`, `.exe` и `.deb` администратор загружает в самом чате: меню рабочего пространства → «Приложение для
+Готовые `.dmg`, `.exe`, `.deb` и `.pkg.tar.zst` администратор загружает в самом чате: меню рабочего пространства → «Приложение для
 компьютера» (`/admin/desktop`, до 512 МБ, только последняя версия для каждой системы). Файлы лежат в том же
 хранилище, что и вложения; коллеги скачивают их на `/download` после входа, а у кого стоит более старая версия,
 приложение показывает баннер. Версию в форме загрузки подставляем из имени файла — она должна совпадать с

@@ -11,6 +11,7 @@ import { BASE, DOMAIN, call, closeSockets, login, run } from "./helpers.mjs";
 const dmg = () => Buffer.concat([randomBytes(5000), Buffer.from("koly"), Buffer.alloc(508)]);
 const exe = () => Buffer.concat([Buffer.from("MZ"), randomBytes(3000)]);
 const deb = () => Buffer.concat([Buffer.from("!<arch>\n"), randomBytes(3000)]);
+const pkg = () => Buffer.concat([Buffer.from([0x28, 0xb5, 0x2f, 0xfd]), randomBytes(3000)]); // pacman, zstd
 
 const put = (cookie, platform, bytes, name, version) =>
   fetch(`${BASE}/api/admin/desktop/${platform}?${new URLSearchParams({ name, version })}`, {
@@ -32,7 +33,7 @@ describe("desktop installers", () => {
 
   test("an admin uploads, everyone signed in sees and downloads", async () => {
     assert.equal((await call(null, "GET", "/api/desktop")).status, 401, "not for strangers");
-    assert.deepEqual((await call(anna, "GET", "/api/desktop")).body, { mac: null, win: null, linux: null });
+    assert.deepEqual((await call(anna, "GET", "/api/desktop")).body, { mac: null, win: null, linux: null, arch: null });
 
     firstMac = dmg();
     assert.equal((await put(anna, "mac", firstMac, "appinstallschat-1.0.2-mac.dmg", "1.0.2")).status, 403, "members cannot upload");
@@ -62,6 +63,7 @@ describe("desktop installers", () => {
     assert.equal((await put(owner, "win", dmg(), "appinstallschat-1.0.9-win.exe", "1.0.9")).status, 400, "a .dmg renamed to .exe");
     assert.equal((await put(owner, "linux", exe(), "appinstallschat-1.0.9-linux.deb", "1.0.9")).status, 400, "an .exe renamed to .deb");
     assert.equal((await put(owner, "linux", deb(), "appinstallschat-1.0.9-linux.AppImage", "1.0.9")).status, 400, "Ubuntu takes .deb");
+    assert.equal((await put(owner, "arch", deb(), "appinstallschat-1.0.9-x86_64.pkg.tar.zst", "1.0.9")).status, 400, "a .deb renamed for Arch");
     assert.equal((await put(owner, "mac", dmg(), "appinstallschat-1.0-mac.dmg", "1.0")).status, 400, "version");
 
     // Заявленный размер больше лимита — отказ сразу, тело не ждём.
@@ -86,8 +88,11 @@ describe("desktop installers", () => {
     assert.equal(win.status, 200);
     const linux = await put(owner, "linux", deb(), "appinstallschat-1.0.2-linux.deb", "1.0.2");
     assert.equal(linux.status, 200, await linux.clone().text());
-    const pkg = await get(anna, "/api/desktop/linux/download");
-    assert.equal(pkg.headers.get("content-type"), "application/vnd.debian.binary-package");
+    const debFile = await get(anna, "/api/desktop/linux/download");
+    assert.equal(debFile.headers.get("content-type"), "application/vnd.debian.binary-package");
+    const arch = await put(owner, "arch", pkg(), "appinstallschat-1.0.2-x86_64.pkg.tar.zst", "1.0.2");
+    assert.equal(arch.status, 200, await arch.clone().text());
+    assert.equal((await call(anna, "GET", "/api/desktop")).body.arch.name, "appinstallschat-1.0.2-x86_64.pkg.tar.zst");
     const next = dmg();
     assert.equal((await put(owner, "mac", next, "appinstallschat-1.0.3-mac.dmg", "1.0.3")).status, 200);
     const info = (await call(anna, "GET", "/api/desktop")).body;

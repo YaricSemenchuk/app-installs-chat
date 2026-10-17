@@ -31,6 +31,7 @@ export const PLATFORMS: { id: DesktopPlatform; label: string; icon: ReactNode }[
   { id: "mac", label: "macOS", icon: <Apple /> },
   { id: "win", label: "Windows", icon: <Monitor /> },
   { id: "linux", label: "Ubuntu", icon: <Laptop /> },
+  { id: "arch", label: "Arch Linux", icon: <Laptop /> },
 ];
 const labelOf = (id: DesktopPlatform) => PLATFORMS.find((x) => x.id === id)!.label;
 const dateFmt = new Intl.DateTimeFormat("ru", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
@@ -66,7 +67,8 @@ export function InstallersPage() {
     target.current = platform;
     setError(null);
     if (!input.current) return;
-    input.current.accept = INSTALLER_EXT[platform];
+    // Окно выбора файла берёт расширение по последней точке: для «.pkg.tar.zst» фильтруем по «.zst», полное проверит сервер.
+    input.current.accept = platform === "arch" ? ".zst" : INSTALLER_EXT[platform];
     input.current.click();
   }
 
@@ -152,7 +154,7 @@ export function InstallersPage() {
         <ol className={s.steps}>
           <li>Поднимите version в apps/desktop/package.json.</li>
           <li>Соберите установщики с адресом этого чата: команды — в README, раздел «Десктоп».</li>
-          <li>Загрузите .dmg, .exe и .deb сюда. У кого стоит старая версия, приложение предложит обновиться.</li>
+          <li>Загрузите .dmg, .exe, .deb и .pkg.tar.zst сюда. У кого стоит старая версия, приложение предложит обновиться.</li>
         </ol>
       </section>
 

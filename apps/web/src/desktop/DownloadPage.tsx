@@ -21,8 +21,9 @@ export function DownloadPage() {
 
   const d = info.data;
   const mine = installerPlatform();
-  // Своя система — первой.
-  const available = PLATFORMS.filter((x) => d?.[x.id]).sort((a, b) => Number(b.id === mine) - Number(a.id === mine));
+  // Своя система — первой. Ubuntu и Arch по браузеру не различить: на Linux первыми идут обе.
+  const isMine = (id: string) => id === mine || (mine === "linux" && id === "arch");
+  const available = PLATFORMS.filter((x) => d?.[x.id]).sort((a, b) => Number(isMine(b.id)) - Number(isMine(a.id)));
   const admin = !!boot.data && isAdminRole(boot.data.me.role);
   return (
     <main className={s.standalone}>
@@ -60,6 +61,7 @@ export function DownloadPage() {
           </li>
           <li>Windows: на синем окне SmartScreen нажмите «Подробнее» → «Выполнить в любом случае».</li>
           <li>Ubuntu: откройте .deb двойным щелчком — установит «Центр приложений». Или в терминале: sudo apt install ./имя-файла.deb</li>
+          <li>Arch Linux: в терминале sudo pacman -U ./имя-файла.pkg.tar.zst</li>
         </ol>
         <p>
           <a href="/">Вернуться в чат</a>
