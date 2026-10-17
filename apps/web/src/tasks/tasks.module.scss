@@ -1,0 +1,515 @@
+@use "../styles/mixins" as *;
+
+// ───── панель «Задачи» в канале (каркас — как у треда, ThreadPanel.module.scss) ─────
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  padding: var(--space-12) var(--space-16) var(--space-4);
+}
+
+.section {
+  padding: var(--space-8) 0 var(--space-16);
+
+  & + & {
+    border-top: 1px solid var(--color-border);
+  }
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-8);
+  margin: 0;
+  padding: var(--space-8) var(--space-16);
+  color: var(--color-text);
+  @include type(name);
+}
+
+.sectionNote {
+  margin: 0;
+  padding: var(--space-4) var(--space-16) var(--space-8);
+  color: var(--color-text-muted);
+  @include type(caption);
+}
+
+.count {
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  @include type(label);
+}
+
+.source {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4) var(--space-8);
+  padding: var(--space-12) var(--space-16) var(--space-16);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  @include type(caption);
+
+  code {
+    max-width: 100%;
+    padding: 0 var(--space-4);
+    border-radius: 4px;
+    background: var(--color-code-bg);
+    color: var(--color-text-secondary);
+    font-family: var(--font-mono);
+    @include truncate;
+  }
+
+  a {
+    color: var(--color-link);
+  }
+}
+
+.empty {
+  padding: var(--space-16);
+}
+
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  padding: var(--space-16);
+}
+
+// ───── группы по приоритету и строки задач ─────
+.group + .group {
+  margin-top: var(--space-4);
+}
+
+.groupTitle {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin: 0;
+  padding: var(--space-8) var(--space-16) var(--space-4);
+  background: var(--color-bg);
+  color: var(--color-text-secondary);
+  @include type(label);
+}
+
+.priority {
+  flex: none;
+  width: var(--size-icon);
+  height: var(--size-icon);
+}
+
+// Красным — только то, что важнее обычного; средний приоритет нейтральный, низкие — синие.
+.level1,
+.level2 {
+  color: var(--color-danger-text);
+}
+
+.level3 {
+  color: var(--color-text-muted);
+}
+
+.level4,
+.level5 {
+  color: var(--color-link);
+}
+
+.issues {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.issue {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-8) var(--space-16);
+
+  &:hover {
+    background: var(--color-surface);
+  }
+}
+
+.summary {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--color-text);
+  text-decoration: none;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  @include type(body-read);
+
+  &:hover {
+    color: var(--color-link);
+  }
+
+  &:focus-visible {
+    border-radius: 4px;
+    @include focus-ring;
+  }
+}
+
+.key {
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  @include type(label);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4) var(--space-12);
+  min-width: 0;
+  color: var(--color-text-muted);
+  @include type(caption);
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  max-width: 180px;
+  height: 20px;
+  padding: 0 var(--space-8);
+  border-radius: var(--radius-pill);
+  @include type(label);
+  @include truncate;
+}
+
+// statusCategory из Jira: к выполнению — серый, в работе — акцент, готово — зелёный.
+.new {
+  background: var(--color-surface-hover);
+  color: var(--color-text-secondary);
+}
+
+.indeterminate {
+  background: var(--color-accent-soft);
+  color: var(--color-link);
+}
+
+.done {
+  background: color-mix(in srgb, var(--color-success) 16%, transparent);
+  color: var(--color-success-text);
+}
+
+.assignee {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.assigneeName {
+  max-width: 160px;
+  @include truncate;
+}
+
+.unassigned {
+  font-style: italic;
+}
+
+.late {
+  color: var(--color-danger-text);
+}
+
+.designToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: 20px;
+  padding: 0 var(--space-4);
+  margin-left: calc(var(--space-4) * -1);
+  border: 0;
+  border-radius: var(--radius-chip);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  @include type(caption);
+
+  &:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.flipped {
+  transform: rotate(180deg);
+}
+
+.designs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding: var(--space-4) 0;
+}
+
+.error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-8);
+  margin: var(--space-4) var(--space-16) var(--space-8);
+  padding: var(--space-8) var(--space-12);
+  border-radius: var(--radius-input);
+  background: color-mix(in srgb, var(--color-danger) 8%, transparent);
+  color: var(--color-danger-text);
+  @include type(body-read);
+
+  svg {
+    flex: none;
+    width: var(--size-icon);
+    height: var(--size-icon);
+    margin-top: 2px;
+  }
+}
+
+// ───── карточка макета (LinkUnfurl) ─────
+.figma {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  max-width: 400px;
+  padding: var(--space-2) var(--space-32) var(--space-2) var(--space-12);
+  border-left: 3px solid var(--color-border-strong);
+}
+
+.figmaText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.figmaSite {
+  color: var(--color-text-muted);
+  @include type(caption);
+  @include truncate;
+}
+
+.figmaTitle {
+  color: var(--color-link);
+  text-decoration: none;
+  @include type(body-read);
+  @include truncate;
+  font-weight: 600;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.figmaNote {
+  color: var(--color-text-secondary);
+  @include type(caption);
+}
+
+.figmaImage {
+  display: block;
+  width: min(360px, 100%);
+  max-height: 360px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-chip);
+  background: var(--color-surface);
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.figmaHide {
+  position: absolute;
+  top: 0;
+  right: 0;
+  opacity: 0;
+
+  .figma:hover &,
+  &:focus-visible {
+    opacity: 1;
+  }
+}
+
+.unfurls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  margin-top: var(--space-4);
+}
+
+// ───── правки из комментариев Figma ─────
+.comments {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.comment {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-8);
+  padding: var(--space-8) var(--space-16);
+  color: inherit;
+  text-decoration: none;
+
+  &:hover {
+    background: var(--color-surface);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+    outline-offset: -2px;
+  }
+}
+
+.commentBody {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.commentHead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-8);
+  min-width: 0;
+}
+
+.commentAuthor {
+  flex: none;
+  color: var(--color-text);
+  @include type(name);
+}
+
+.commentWhere {
+  color: var(--color-text-muted);
+  @include type(caption);
+  @include truncate;
+}
+
+.commentText {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--color-text);
+  white-space: pre-line;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  @include type(body-read);
+}
+
+.commentFoot {
+  display: flex;
+  gap: var(--space-12);
+  color: var(--color-text-muted);
+  @include type(caption);
+}
+
+.commentOpen {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  color: var(--color-link);
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+// ───── страница «Мои задачи» ─────
+.pageBody {
+  max-width: 880px;
+}
+
+.account {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  color: var(--color-text-muted);
+  @include type(caption);
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-12);
+  margin-bottom: var(--space-8);
+}
+
+.pageList {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+
+  .groupTitle {
+    padding-top: var(--space-12);
+  }
+}
+
+// ───── диалог источников ─────
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-20);
+}
+
+.projects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-top: var(--space-8);
+}
+
+.project {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: var(--size-control-xs);
+  padding: 0 var(--space-8);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  @include type(caption);
+
+  &:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text);
+  }
+
+  &[aria-pressed="true"] {
+    border-color: transparent;
+    background: var(--color-accent-soft);
+    color: var(--color-text);
+  }
+
+  strong {
+    font-weight: 600;
+  }
+}
+
+.footerSpacer {
+  flex: 1;
+}

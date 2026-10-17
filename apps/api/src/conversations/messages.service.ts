@@ -22,6 +22,7 @@ import { EventsService } from "../realtime/events.service.js";
 import { RealtimeHub } from "../realtime/hub.service.js";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { PresenceService } from "../realtime/presence.service.js";
+import { UnfurlsService } from "../tasks/unfurls.service.js";
 import { assertCanPost, assertMember, isAdmin, isChannel, loadAccess, type Access } from "./access.js";
 import { MESSAGE_INCLUDE } from "./message-include.js";
 
@@ -52,6 +53,7 @@ export class MessagesService {
     private readonly hub: RealtimeHub,
     private readonly presence: PresenceService,
     private readonly notifications: NotificationsService,
+    private readonly unfurls: UnfurlsService,
   ) {}
 
   async list(me: users, conversationId: string, q: { before?: number; after?: number; limit: number }): Promise<MessagesPageDto> {
@@ -201,6 +203,7 @@ export class MessagesService {
     if (result.events.length > 0) {
       this.hub.publish(result.events);
       this.notifications.afterMessage(result.message, access.conv, new Set(mentions.keys()));
+      this.unfurls.refresh(result.message.id, text);
     }
     return result.message;
   }
@@ -274,6 +277,7 @@ export class MessagesService {
       return { message, event };
     });
     this.hub.publish([event]);
+    this.unfurls.refresh(id, next, msg.message_unfurls.length > 0);
     return message;
   }
 

@@ -31,11 +31,16 @@ import { PresenceService } from "./realtime/presence.service.js";
 import { RealtimeGateway } from "./realtime/realtime.gateway.js";
 import { SearchController } from "./search/search.controller.js";
 import { SearchService } from "./search/search.service.js";
+import { FigmaService } from "./tasks/figma.service.js";
+import { JiraService } from "./tasks/jira.service.js";
+import { TasksController } from "./tasks/tasks.controller.js";
+import { TasksService } from "./tasks/tasks.service.js";
+import { UnfurlsService } from "./tasks/unfurls.service.js";
 import { UsersController } from "./users/users.controller.js";
 import { UsersService } from "./users/users.service.js";
 
 @Module({
-  controllers: [AuthController, ConversationsController, MessagesController, FilesController, SearchController, NotificationsController, InvitesController, UsersController, InstallersController, CallsController, LivekitWebhookController, HealthController],
+  controllers: [AuthController, ConversationsController, MessagesController, FilesController, SearchController, NotificationsController, InvitesController, UsersController, InstallersController, CallsController, LivekitWebhookController, TasksController, HealthController],
   providers: [
     PrismaService,
     MailService,
@@ -59,6 +64,10 @@ import { UsersService } from "./users/users.service.js";
     UsersService,
     InstallersService,
     CallsService,
+    JiraService,
+    FigmaService,
+    UnfurlsService,
+    TasksService,
     BootstrapService,
   ],
 })

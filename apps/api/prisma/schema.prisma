@@ -113,6 +113,7 @@ model conversations {
   activity_items                          activity_items[]
   bookmarks                               bookmarks[]
   calls                                   calls?
+  channel_task_sources                    channel_task_sources?
   conversation_members                    conversation_members[]
   users_conversations_archived_byTousers  users?                 @relation("conversations_archived_byTousers", fields: [archived_by], references: [id], onDelete: Restrict, onUpdate: NoAction)
   users_conversations_created_byTousers   users                  @relation("conversations_created_byTousers", fields: [created_by], references: [id], onUpdate: NoAction)
@@ -269,21 +270,24 @@ model message_mentions {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model message_unfurls {
-  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  message_id  String    @db.Uuid
-  url         String
-  status      String    @default("pending")
-  title       String    @default("")
-  description String    @default("")
-  site_name   String    @default("")
-  image_url   String?
-  hidden      Boolean   @default(false)
-  fetched_at  DateTime? @db.Timestamptz(6)
-  created_at  DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime  @default(now()) @db.Timestamptz(6)
-  messages    messages  @relation(fields: [message_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id               String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  message_id       String          @db.Uuid
+  url              String
+  status           String          @default("pending")
+  title            String          @default("")
+  description      String          @default("")
+  site_name        String          @default("")
+  image_url        String?
+  hidden           Boolean         @default(false)
+  fetched_at       DateTime?       @db.Timestamptz(6)
+  created_at       DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime        @default(now()) @db.Timestamptz(6)
+  figma_preview_id String?         @db.Uuid
+  figma_previews   figma_previews? @relation(fields: [figma_preview_id], references: [id], onUpdate: NoAction)
+  messages         messages        @relation(fields: [message_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([message_id, url])
+  @@index([figma_preview_id])
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -517,6 +521,7 @@ model users {
   bookmarks                                       bookmarks[]
   call_participants                               call_participants[]
   calls                                           calls[]
+  channel_task_sources                            channel_task_sources[]
   conversation_members                            conversation_members[]
   conversations_conversations_archived_byTousers  conversations[]        @relation("conversations_archived_byTousers")
   conversations_conversations_created_byTousers   conversations[]        @relation("conversations_created_byTousers")
@@ -600,4 +605,39 @@ model calls {
   users             users?              @relation(fields: [started_by], references: [id], onUpdate: NoAction)
 
   @@index([started_by])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model channel_task_sources {
+  conversation_id String        @id @db.Uuid
+  jira_jql        String?
+  figma_files     String[]      @default([])
+  updated_by      String?       @db.Uuid
+  created_at      DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime      @default(now()) @db.Timestamptz(6)
+  conversations   conversations @relation(fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users           users?        @relation(fields: [updated_by], references: [id], onUpdate: NoAction)
+
+  @@index([updated_by])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model figma_previews {
+  id              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  file_key        String
+  node_id         String            @default("")
+  status          String            @default("pending")
+  file_name       String            @default("")
+  node_name       String            @default("")
+  image_key       String?
+  width           Int?
+  height          Int?
+  last_modified   DateTime?         @db.Timestamptz(6)
+  fetched_at      DateTime?         @db.Timestamptz(6)
+  retry_at        DateTime?         @db.Timestamptz(6)
+  created_at      DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime          @default(now()) @db.Timestamptz(6)
+  message_unfurls message_unfurls[]
+
+  @@unique([file_key, node_id])
 }
