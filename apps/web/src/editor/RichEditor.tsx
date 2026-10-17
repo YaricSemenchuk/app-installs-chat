@@ -1,5 +1,5 @@
 // Композер на TipTap: лента, тред и правка сообщения. Наружу отдаёт разметку (editor/doc.ts).
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import { EditorContent, useEditor, useEditorState, type Editor } from "@tiptap/react";
 import { useStore } from "zustand";
 import {
@@ -13,13 +13,18 @@ import {
   ListOrdered,
   Lock,
   Megaphone,
+  Paperclip,
+  RotateCw,
   SendHorizontal,
   Smile,
   SquareCode,
   Strikethrough,
   TextQuote,
+  X,
 } from "lucide-react";
-import { MESSAGE_MAX_LENGTH } from "@teamchat/shared";
+import { MESSAGE_MAX_LENGTH, type FileDto } from "@teamchat/shared";
+import { fileKind, formatBytes } from "../files/kind";
+import { useUploads, type Attachment } from "../files/uploads";
 import { EmojiPicker } from "../emoji/EmojiPicker";
 import { loadEmoji, rememberEmoji, searchEmoji } from "../emoji/emoji";
 import { cx } from "../lib/cx";
@@ -41,7 +46,7 @@ export type Sources = {
 type Props = {
   placeholder: string;
   sources: Sources;
-  onSubmit: (markup: string) => void; // после отправки поле очищается (кроме правки)
+  onSubmit: (markup: string, files: FileDto[]) => void; // после отправки поле очищается (кроме правки)
   variant?: "feed" | "thread" | "edit";
   initial?: string; // разметка для правки
   disabledReason?: string;
@@ -49,6 +54,8 @@ type Props = {
   onEditLast?: () => void; // ↑ в пустом поле
   below?: ReactNode; // строка под полем: «Также отправить в канал»
   autoFocus?: boolean;
+  allowEmpty?: boolean; // правка сообщения с файлами: текст можно стереть
+  attachRef?: RefObject<((files: File[]) => void) | null>; // файлы, брошенные на страницу разговора
 };
 
 export function RichEditor({
@@ -62,15 +69,29 @@ export function RichEditor({
   onEditLast,
   below,
   autoFocus = true,
+  allowEmpty = false,
+  attachRef,
 }: Props) {
   const popup = useRef<Popup>(createPopup()).current;
+  const uploads = useUploads();
+  const [dragging, setDragging] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const canAttach = variant !== "edit" && !disabledReason;
   const [linkOpen, setLinkOpen] = useState(false);
   const [tooLong, setTooLong] = useState(false);
   const editorRef = useRef<Editor | null>(null);
 
   // Последние значения пропсов для расширений: редактор создаётся один раз.
-  const latest = useRef({ sources, onSubmit, onCancel, onEditLast, disabledReason, variant });
-  latest.current = { sources, onSubmit, onCancel, onEditLast, disabledReason, variant };
+  const latest = useRef({ sources, onSubmit, onCancel, onEditLast, disabledReason, variant, uploads, allowEmpty, canAttach });
+  latest.current = { sources, onSubmit, onCancel, onEditLast, disabledReason, variant, uploads, allowEmpty, canAttach };
+
+  useEffect(() => {
+    if (!attachRef) return;
+    attachRef.current = (files) => latest.current.canAttach && latest.current.uploads.add(files);
+    return () => {
+      attachRef.current = null;
+    };
+  }, [attachRef]);
 
   const hooks = useMemo<EditorHooks>(
     () => ({
@@ -113,6 +134,19 @@ export function RichEditor({
         "aria-label": placeholder,
         "aria-describedby": `hint-${variant}`,
       },
+      // Картинка из буфера обмена или файл, брошенный прямо в поле, — во вложения, а не в текст.
+      handlePaste: (_view, event) => {
+        const files = [...(event.clipboardData?.files ?? [])];
+        if (files.length === 0 || !latest.current.canAttach) return false;
+        latest.current.uploads.add(files);
+        return true;
+      },
+      handleDrop: (_view, event) => {
+        const files = [...((event as DragEvent).dataTransfer?.files ?? [])];
+        if (files.length === 0 || !latest.current.canAttach) return false;
+        latest.current.uploads.add(files);
+        return true;
+      },
     },
     onUpdate: ({ editor: e }) => setTooLong(e.getText().length > MESSAGE_MAX_LENGTH),
   });
@@ -145,11 +179,15 @@ export function RichEditor({
     const e = editorRef.current;
     if (!e || latest.current.disabledReason) return true;
     const markup = docToMarkup(e.getJSON());
-    if (!markup.trim() || markup.length > MESSAGE_MAX_LENGTH) {
+    const up = latest.current.uploads;
+    if (up.busy || up.broken) return true;
+    const files = up.ready;
+    if ((!markup.trim() && files.length === 0 && !latest.current.allowEmpty) || markup.length > MESSAGE_MAX_LENGTH) {
       setTooLong(markup.length > MESSAGE_MAX_LENGTH);
       return true;
     }
-    latest.current.onSubmit(markup);
+    latest.current.onSubmit(markup, files);
+    up.clear();
     // Вместе с текстом сбрасываем «висящие» метки: иначе следующее сообщение начнётся ссылкой или жирным.
     if (latest.current.variant !== "edit") e.chain()
         .clearContent(true)
@@ -164,10 +202,40 @@ export function RichEditor({
   if (!editor) return null;
   const run = (fn: (e: Editor) => void) => () => fn(editor);
   const edit = variant === "edit";
+  const nothing = (state?.empty ?? true) && uploads.ready.length === 0 && !allowEmpty;
+  const blocked = nothing || tooLong || uploads.busy || uploads.broken || !!disabledReason;
+  const hint =
+    disabledReason ??
+    (tooLong
+      ? `Слишком длинно: больше ${MESSAGE_MAX_LENGTH.toLocaleString("ru")} символов`
+      : uploads.busy
+        ? "Файлы ещё загружаются…"
+        : uploads.broken
+          ? "Уберите файлы, которые не загрузились, или повторите"
+          : edit
+            ? "Esc — отмена, Enter — сохранить"
+            : "Enter — отправить, Shift+Enter — новая строка");
 
   return (
-    <div className={cx(s.wrap, edit && s.editWrap)}>
-      <div className={cx(s.composer, disabledReason && s.disabled)}>
+    <div
+      className={cx(s.wrap, edit && s.editWrap)}
+      onDragOver={(e) => {
+        if (!canAttach || !e.dataTransfer.types.includes("Files")) return;
+        e.preventDefault();
+        setDragging(true);
+      }}
+      onDragLeave={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false);
+      }}
+      onDrop={(e) => {
+        setDragging(false);
+        if (!canAttach || e.dataTransfer.files.length === 0 || e.defaultPrevented) return;
+        e.preventDefault();
+        uploads.add([...e.dataTransfer.files]);
+      }}
+    >
+      <div className={cx(s.composer, disabledReason && s.disabled, dragging && s.dragging)}>
+        {dragging && <div className={s.dropHint}>Отпустите, чтобы прикрепить</div>}
         <SuggestionList popup={popup} />
         {!edit && (
           <div className={s.toolbar} role="toolbar" aria-label="Форматирование">
@@ -200,9 +268,34 @@ export function RichEditor({
             </IconButton>
           </div>
         )}
+        {uploads.items.length > 0 && (
+          <ul className={s.chips} aria-label="Вложения">
+            {uploads.items.map((a) => (
+              <FileChip key={a.key} item={a} onRemove={() => uploads.remove(a.key)} onRetry={() => uploads.retry(a.key)} />
+            ))}
+          </ul>
+        )}
         <EditorContent editor={editor} />
         <div className={s.bottom}>
           <div className={s.tools}>
+            {canAttach && (
+              <>
+                <IconButton label="Прикрепить файлы" size="xs" onClick={() => fileInput.current?.click()}>
+                  <Paperclip />
+                </IconButton>
+                <input
+                  ref={fileInput}
+                  type="file"
+                  multiple
+                  hidden
+                  onChange={(e) => {
+                    uploads.add([...(e.target.files ?? [])]);
+                    e.target.value = "";
+                    editor.commands.focus();
+                  }}
+                />
+              </>
+            )}
             <EmojiButton editor={editor} />
             <IconButton
               label="Упомянуть"
@@ -215,13 +308,8 @@ export function RichEditor({
             >
               <AtSign />
             </IconButton>
-            <span id={`hint-${variant}`} className={tooLong ? s.error : s.hint}>
-              {disabledReason ??
-                (tooLong
-                  ? `Слишком длинно: больше ${MESSAGE_MAX_LENGTH.toLocaleString("ru")} символов`
-                  : edit
-                    ? "Esc — отмена, Enter — сохранить"
-                    : "Enter — отправить, Shift+Enter — новая строка")}
+            <span id={`hint-${variant}`} className={tooLong || uploads.broken ? s.error : s.hint}>
+              {hint}
             </span>
           </div>
           {edit ? (
@@ -229,7 +317,7 @@ export function RichEditor({
               <Button variant="ghost" size="s" onClick={() => onCancel?.()}>
                 Отмена
               </Button>
-              <Button size="s" onClick={() => void submit()} disabled={state?.empty || tooLong}>
+              <Button size="s" onClick={() => void submit()} disabled={blocked}>
                 Сохранить
               </Button>
             </span>
@@ -239,7 +327,7 @@ export function RichEditor({
               shortcut="Enter"
               size="xs"
               tone="primary"
-              disabled={state?.empty || tooLong || !!disabledReason}
+              disabled={blocked}
               onClick={() => void submit()}
             >
               <SendHorizontal />
@@ -249,6 +337,47 @@ export function RichEditor({
       </div>
       {below}
     </div>
+  );
+}
+
+// Вложение в композере: миниатюра или иконка, имя, размер, прогресс; ошибка — с повтором.
+function FileChip({ item: a, onRemove, onRetry }: { item: Attachment; onRemove: () => void; onRetry: () => void }) {
+  const k = fileKind({ name: a.name, mimetype: a.type });
+  const Icon = k.icon;
+  const failed = a.status === "error" || a.status === "too-large";
+  const meta =
+    a.status === "too-large"
+      ? "Файл больше 100 МБ"
+      : a.status === "error"
+        ? (a.error ?? "Не загрузилось")
+        : a.status === "uploading"
+          ? `${formatBytes(a.size)} · ${Math.round(a.progress * 100)}%`
+          : formatBytes(a.size);
+  return (
+    <li className={cx(s.chip, failed && s.chipFailed)}>
+      {a.preview ? (
+        <img className={s.chipThumb} src={a.preview} alt="" />
+      ) : (
+        <span className={s.chipIcon} style={{ background: `var(--color-avatar-${k.tone})` }}>
+          <Icon />
+        </span>
+      )}
+      <span className={s.chipText}>
+        <span className={s.chipName} title={a.name}>
+          {a.name}
+        </span>
+        <span className={s.chipMeta}>{meta}</span>
+      </span>
+      {a.status === "error" && (
+        <IconButton label="Повторить загрузку" size="xs" onClick={onRetry}>
+          <RotateCw />
+        </IconButton>
+      )}
+      <IconButton label={`Убрать ${a.name}`} size="xs" onClick={onRemove}>
+        <X />
+      </IconButton>
+      {a.status === "uploading" && <span className={s.chipProgress} style={{ width: `${Math.round(a.progress * 100)}%` }} />}
+    </li>
   );
 }
 

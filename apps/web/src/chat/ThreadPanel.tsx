@@ -118,9 +118,9 @@ export function ThreadPanel({ parentId, onClose }: { parentId: string; onClose: 
           variant="thread"
           placeholder="Ответить в треде…"
           sources={ctx.sources}
-          onSubmit={(markup) => {
+          onSubmit={(markup, files) => {
             atBottom.current = true;
-            void send(conv.id, boot.me.id, markup, { parentId, alsoInChannel });
+            void send(conv.id, boot.me.id, markup, { parentId, alsoInChannel, files });
             setAlsoInChannel(false);
           }}
           onEditLast={() => {

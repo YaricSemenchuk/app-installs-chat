@@ -11,7 +11,19 @@ import { isEmojiOnly } from "../emoji/emoji";
 import { MentionChip } from "./Message";
 import s from "./Markup.module.scss";
 
-type Ctx = { boot: BootDto; mentionsMe: boolean };
+type Ctx = { boot: BootDto; mentionsMe: boolean; hl: RegExp | null };
+
+// Подсветка совпадений поиска: только целые слова, регистр не важен.
+function highlighter(words: string[] | undefined): RegExp | null {
+  const clean = (words ?? []).filter(Boolean).map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  return clean.length ? new RegExp(`(?<![\\p{L}\\p{N}])(${clean.join("|")})(?![\\p{L}\\p{N}])`, "giu") : null;
+}
+
+function marked(text: string, hl: RegExp | null): ReactNode {
+  if (!hl) return text;
+  const parts = text.split(hl);
+  return parts.length === 1 ? text : parts.map((p, i) => (i % 2 === 1 ? <mark key={i} className={s.mark}>{p}</mark> : p));
+}
 
 // suffix — «(изменено)»: продолжает последнюю строку, а не уходит на новую.
 export const Markup = memo(function Markup({
@@ -19,14 +31,17 @@ export const Markup = memo(function Markup({
   boot,
   mentionsMe,
   suffix,
+  highlight,
 }: {
   text: string;
   boot: BootDto;
   mentionsMe: boolean;
   suffix?: ReactNode;
+  highlight?: string[];
 }) {
   const blocks = useMemo(() => parseMarkup(text), [text]);
-  const ctx: Ctx = { boot, mentionsMe };
+  const hl = useMemo(() => highlighter(highlight), [highlight]);
+  const ctx: Ctx = { boot, mentionsMe, hl };
   const only = blocks.length === 1 && blocks[0]!.t === "p" ? blocks[0]!.c : null;
   const big = only !== null && only.every((n) => n.t === "text") && isEmojiOnly(only.map((n) => (n.t === "text" ? n.v : "")).join(""));
 
@@ -85,7 +100,7 @@ function inline(nodes: Inline[], ctx: Ctx): ReactNode[] {
   return nodes.map((n, i) => {
     switch (n.t) {
       case "text":
-        return <Fragment key={i}>{n.v}</Fragment>;
+        return <Fragment key={i}>{marked(n.v, ctx.hl)}</Fragment>;
       case "bold":
         return <strong key={i}>{inline(n.c, ctx)}</strong>;
       case "italic":

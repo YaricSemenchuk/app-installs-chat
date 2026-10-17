@@ -6,6 +6,7 @@ import { displayOf, isOnline, userName } from "../data/boot";
 import { useMessages, type ChatMessage } from "../data/messages";
 import { RichEditor } from "../editor/RichEditor";
 import { EmojiPicker } from "../emoji/EmojiPicker";
+import { Attachments } from "../files/Attachments";
 import { emojiChar, rememberEmoji, useEmoji, useRecentEmoji } from "../emoji/emoji";
 import { dayLabel, formatFull, formatTime, plural } from "../lib/format";
 import { UserCard } from "../people/UserCard";
@@ -76,6 +77,7 @@ export function MessageRow({ message: m, prev, place }: { message: ChatMessage; 
         placeholder="Изменить сообщение"
         initial={m.text}
         sources={ctx.sources}
+        allowEmpty={m.files.length > 0}
         onSubmit={(markup) => {
           ctx.setEditing(null);
           if (markup !== m.text) void edit(m.id, markup);
@@ -86,7 +88,12 @@ export function MessageRow({ message: m, prev, place }: { message: ChatMessage; 
   } else if (m.deleted) {
     body = <p className={s.deleted}>Сообщение удалено</p>;
   } else {
-    body = <Markup text={m.text} boot={boot} mentionsMe={mentionsMe} suffix={edited} />;
+    body = (
+      <>
+        {m.text.trim() !== "" ? <Markup text={m.text} boot={boot} mentionsMe={mentionsMe} suffix={edited} /> : edited}
+        {m.files.length > 0 && <Attachments files={m.files} author={author} time={formatFull(m.createdAt)} />}
+      </>
+    );
   }
 
   return (

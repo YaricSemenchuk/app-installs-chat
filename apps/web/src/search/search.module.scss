@@ -1,0 +1,205 @@
+@use "../styles/mixins" as *;
+
+.bar {
+  display: flex;
+  gap: var(--space-8);
+  max-width: 640px;
+  margin-bottom: var(--space-16);
+
+  > :first-child {
+    flex: 1;
+  }
+}
+
+.results {
+  padding-top: var(--space-16);
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  margin-bottom: var(--space-16);
+}
+
+.filter {
+  display: inline-flex;
+  align-items: center;
+}
+
+.filterButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: var(--size-control-s);
+  padding: 0 var(--space-12);
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg);
+  color: var(--color-text);
+  cursor: pointer;
+  @include type(label);
+
+  svg {
+    width: 14px;
+    height: 14px;
+    color: var(--color-text-muted);
+  }
+
+  &:hover {
+    background: var(--color-surface-hover);
+  }
+}
+
+.filterActive {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.filterClear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-control-xs);
+  height: var(--size-control-xs);
+  margin-left: var(--space-2);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  &:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text);
+  }
+}
+
+.skeletons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.hits {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hit {
+  padding: var(--space-12);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-input);
+  background: var(--color-bg);
+  cursor: pointer;
+  @include transition(border-color, background-color);
+
+  &:hover {
+    border-color: var(--color-border-strong);
+    background: var(--color-surface-hover);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.hitMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-8);
+  color: var(--color-text-muted);
+  @include type(caption);
+}
+
+.hitWhere {
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.hitThread {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+.hitBody {
+  display: flex;
+  gap: var(--space-8);
+}
+
+.hitText {
+  flex: 1;
+  min-width: 0;
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+  @include type(message);
+}
+
+.hitAuthor {
+  display: block;
+  @include type(name);
+}
+
+.hitFiles {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+  color: var(--color-text-secondary);
+  @include type(caption);
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.fileHits {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fileHit {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+}
+
+.more {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-16);
+}
+
+.groupLabel {
+  padding: var(--space-8) var(--space-8) var(--space-4);
+  color: var(--color-text-muted);
+  @include type(label);
+}
+
+.dialogHint {
+  margin: var(--space-8) 0 0;
+  color: var(--color-text-muted);
+  @include type(caption);
+}

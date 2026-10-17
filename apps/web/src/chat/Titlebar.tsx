@@ -8,6 +8,8 @@ import s from "./Titlebar.module.scss";
 
 type Props = { me: string; activity: number; onSignOut?: () => void; onProfile?: () => void; onSearch?: () => void };
 
+const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
+
 export function Titlebar({ me, activity, onSignOut, onProfile, onSearch }: Props) {
   return (
     <header className={s.titlebar}>
@@ -19,10 +21,10 @@ export function Titlebar({ me, activity, onSignOut, onProfile, onSearch }: Props
           <ArrowRight />
         </IconButton>
       </div>
-      <button type="button" className={s.search} aria-label="Перейти к разговору или человеку" onClick={onSearch}>
+      <button type="button" className={s.search} aria-label="Поиск по чату" onClick={onSearch}>
         <Search />
-        <span className={s.placeholder}>Перейти к каналу или человеку</span>
-        <Kbd>⌘K</Kbd>
+        <span className={s.placeholder}>Поиск по чату</span>
+        <Kbd>{isMac ? "⌘G" : "Ctrl+G"}</Kbd>
       </button>
       <div className={s.end}>
         <span className={s.activity}>

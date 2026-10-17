@@ -91,3 +91,10 @@ ol.list {
     text-decoration: underline;
   }
 }
+
+.mark {
+  border-radius: 2px;
+  background: var(--color-highlight);
+  color: inherit;
+  box-shadow: 0 0 0 1px var(--color-highlight-edge);
+}

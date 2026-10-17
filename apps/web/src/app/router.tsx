@@ -1,14 +1,16 @@
 import { createBrowserRouter, Navigate } from "react-router";
-import { Bookmark, FileStack, MessageSquareText, SearchX, SendHorizontal } from "lucide-react";
+import { Bookmark, MessageSquareText, SearchX, SendHorizontal } from "lucide-react";
 import { DirectoryPage } from "../channels/DirectoryPage";
 import { DesignPage } from "../design/DesignPage";
 import { useBoot } from "../data/boot";
+import { FilesPage } from "../files/FilesPage";
 import { ConversationPage } from "../pages/ConversationPage";
 import { InvitePage } from "../pages/InvitePage";
 import { OnboardingPage } from "../pages/OnboardingPage";
 import { SignInPage } from "../pages/SignInPage";
 import { StubPage } from "../pages/StubPage";
 import { PeoplePage } from "../people/PeoplePage";
+import { SearchPage } from "../search/SearchPage";
 import { AppShell } from "./AppShell";
 
 function OpenDefaultConversation() {
@@ -35,7 +37,8 @@ export const router = createBrowserRouter([
       { path: "threads", element: <StubPage icon={<MessageSquareText />} title="Треды" text={later} /> },
       { path: "drafts", element: <StubPage icon={<SendHorizontal />} title="Черновики и отправленные" text={later} /> },
       { path: "saved", element: <StubPage icon={<Bookmark />} title="Сохранённое" text={later} /> },
-      { path: "files", element: <StubPage icon={<FileStack />} title="Файлы" text={later} /> },
+      { path: "files", element: <FilesPage /> },
+      { path: "search", element: <SearchPage /> },
       { path: "*", element: <StubPage icon={<SearchX />} title="Такой страницы нет" text="Проверьте адрес или выберите разговор слева" /> },
     ],
   },

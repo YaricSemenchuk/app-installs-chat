@@ -1,0 +1,123 @@
+@use "../styles/mixins" as *;
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: var(--color-overlay);
+  opacity: 0.85;
+}
+
+.content {
+  position: fixed;
+  inset: 0;
+  z-index: 61;
+  display: flex;
+  flex-direction: column;
+  outline: none;
+  // Поверх затемнения всегда светлый текст, независимо от темы.
+  color: var(--color-on-avatar);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-12) var(--space-16);
+
+  button {
+    color: inherit;
+  }
+}
+
+.titles {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  @include type(title);
+  @include truncate;
+}
+
+.caption {
+  opacity: 0.75;
+  @include type(caption);
+  @include truncate;
+}
+
+.download {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: var(--size-control-s);
+  padding: 0 var(--space-12);
+  border-radius: var(--radius-chip);
+  color: inherit;
+  text-decoration: none;
+  @include type(label);
+
+  &:hover {
+    background: color-mix(in srgb, var(--color-on-avatar) 12%, transparent);
+  }
+
+  svg {
+    width: var(--size-icon);
+    height: var(--size-icon);
+  }
+}
+
+.stage {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding: 0 calc(var(--space-32) * 2) var(--space-24);
+}
+
+.image {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: var(--radius-chip);
+}
+
+.nav {
+  position: absolute;
+  top: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--color-on-avatar) 12%, transparent);
+  color: inherit;
+  cursor: pointer;
+  transform: translateY(-50%);
+
+  &:hover {
+    background: color-mix(in srgb, var(--color-on-avatar) 20%, transparent);
+  }
+
+  svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.prev {
+  left: var(--space-16);
+}
+
+.next {
+  right: var(--space-16);
+}

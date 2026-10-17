@@ -1,3 +1,5 @@
+@use "../styles/mixins" as *;
+
 .layout {
   display: flex;
   flex: 1;
@@ -6,11 +8,27 @@
 }
 
 .page {
+  position: relative;
   display: flex;
   flex: 1;
   flex-direction: column;
   min-width: 0;
   min-height: 0;
+}
+
+.dropZone {
+  position: absolute;
+  inset: var(--space-8);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--color-accent);
+  border-radius: var(--radius-card);
+  background: color-mix(in srgb, var(--color-accent) 8%, var(--color-bg));
+  color: var(--color-accent);
+  pointer-events: none;
+  @include type(title);
 }
 
 .missing {

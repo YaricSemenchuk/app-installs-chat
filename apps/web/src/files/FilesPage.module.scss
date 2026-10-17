@@ -1,0 +1,105 @@
+@use "../styles/mixins" as *;
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-12) var(--space-16);
+  margin-bottom: var(--space-16);
+}
+
+.search {
+  width: min(320px, 100%);
+}
+
+.skeletons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-8);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.preview {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-chip);
+  background: var(--color-surface);
+  cursor: pointer;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--color-on-avatar);
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.name {
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+  @include type(name);
+  @include truncate;
+
+  &:hover {
+    color: var(--color-link);
+  }
+}
+
+.meta {
+  color: var(--color-text-muted);
+  @include type(caption);
+  @include truncate;
+}
+
+.more {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-16);
+}

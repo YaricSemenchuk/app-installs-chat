@@ -152,6 +152,9 @@ function Conversation({ boot, conv }: { boot: BootDto; conv: ConversationDto }) 
   const [unreadAfterSeq] = useState(conv.isMember ? conv.lastReadSeq : Number.MAX_SAFE_INTEGER);
   const readTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const sources = useSources(boot, conv);
+  // Файлы можно бросить на всю страницу разговора, а не только в поле ввода.
+  const attachRef = useRef<((files: File[]) => void) | null>(null);
+  const [dropping, setDropping] = useState(false);
 
   // Лента сбрасывается при вступлении (до него события канала не приходили) — тогда грузим заново.
   const loaded = feed?.loaded ?? false;
@@ -308,7 +311,28 @@ function Conversation({ boot, conv }: { boot: BootDto; conv: ConversationDto }) 
   return (
     <ChatContext.Provider value={ctx}>
       <div className={s.layout}>
-        <div className={s.page}>
+        <div
+          className={s.page}
+          onDragOver={(e) => {
+            if (!conv.isMember || !e.dataTransfer.types.includes("Files")) return;
+            e.preventDefault();
+            setDropping(true);
+          }}
+          onDragLeave={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDropping(false);
+          }}
+          onDrop={(e) => {
+            setDropping(false);
+            if (e.defaultPrevented || e.dataTransfer.files.length === 0) return;
+            e.preventDefault();
+            attachRef.current?.([...e.dataTransfer.files]);
+          }}
+        >
+          {dropping && (
+            <div className={s.dropZone}>
+              <span>Отпустите — файлы прикрепятся к сообщению{channel ? ` в #${conv.name}` : ""}</span>
+            </div>
+          )}
           {header}
           <MessageList
             conversationId={conv.id}
@@ -325,7 +349,8 @@ function Conversation({ boot, conv }: { boot: BootDto; conv: ConversationDto }) 
               disabledReason={conv.archived ? "Канал в архиве, писать сюда нельзя" : undefined}
               sources={sources}
               autoFocus={!threadId}
-              onSubmit={(markup) => void send(conv.id, boot.me.id, markup)}
+              onSubmit={(markup, files) => void send(conv.id, boot.me.id, markup, { files })}
+              attachRef={attachRef}
               onEditLast={editLast}
             />
           ) : (

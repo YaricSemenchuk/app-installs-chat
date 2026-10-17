@@ -1,5 +1,5 @@
 // S03 — каркас: заголовок окна, сайдбар, баннер соединения, текущий экран.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Navigate, Outlet, useNavigate, useParams } from "react-router";
 import { Bookmark, Compass, FileStack, Hash, MessageSquareText, Plus, SendHorizontal, UserPlus, Users } from "lucide-react";
 import { isAdminRole, isChannelKind, type BootDto, type ConversationDto } from "@teamchat/shared";
@@ -7,6 +7,7 @@ import { api, isUnauthorized } from "../api/http";
 import { CreateChannelDialog } from "../channels/CreateChannelDialog";
 import { NewMessageDialog } from "../channels/NewMessageDialog";
 import { QuickSwitcher } from "../channels/QuickSwitcher";
+import { SearchDialog } from "../search/SearchDialog";
 import { Sidebar, SidebarItem, SidebarSection, type SidebarEntry } from "../chat/Sidebar";
 import { Titlebar } from "../chat/Titlebar";
 import { displayOf, isOnline, queryClient, useBoot } from "../data/boot";
@@ -21,7 +22,7 @@ import type { MenuEntry } from "../ui/Menu";
 import { Toaster } from "../ui/Toaster";
 import s from "./AppShell.module.scss";
 
-type Dialog = "invite" | "profile" | "channel" | "message" | "switcher" | null;
+type Dialog = "invite" | "profile" | "channel" | "message" | "switcher" | "search" | null;
 
 function dmEntry(boot: BootDto, c: ConversationDto): SidebarEntry {
   if (c.kind === "group_dm") return { kind: "group", names: dmPeople(boot, c).map(displayOf) };
@@ -40,6 +41,8 @@ export function AppShell() {
   const { conversationId } = useParams();
   const status = useConnection((x) => x.status);
   const [dialog, setDialog] = useState<Dialog>(null);
+  const dialogRef = useRef<Dialog>(null);
+  dialogRef.current = dialog;
   const lastEventId = boot.data?.lastEventId;
   const ready = lastEventId !== undefined;
   const close = (v: boolean) => !v && setDialog(null);
@@ -63,12 +66,19 @@ export function AppShell() {
     return () => clearTimeout(t);
   }, [ready]);
 
-  // ⌘K / Ctrl+K — быстрый переход откуда угодно.
+  // ⌘K / Ctrl+K — быстрый переход откуда угодно, ⌘G / Ctrl+G — поиск по сообщениям и файлам.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+      if (!(e.metaKey || e.ctrlKey) || e.shiftKey || e.altKey) return;
+      // Поверх чужой модалки (просмотр картинки, подтверждение) переход и поиск не открываем.
+      if (dialogRef.current === null && document.querySelector('[role="dialog"]')) return;
+      const key = e.key.toLowerCase();
+      if (key === "k" || key === "л") {
         e.preventDefault();
         setDialog((d) => (d === "switcher" ? null : "switcher"));
+      } else if (key === "g" || key === "п") {
+        e.preventDefault();
+        setDialog((d) => (d === "search" ? null : "search"));
       }
     };
     window.addEventListener("keydown", onKey);
@@ -121,7 +131,7 @@ export function AppShell() {
         activity={0}
         onSignOut={signOut}
         onProfile={() => setDialog("profile")}
-        onSearch={() => setDialog("switcher")}
+        onSearch={() => setDialog("search")}
       />
       <div className={s.body}>
         <Sidebar workspace={workspace.name} menu={workspaceMenu.length > 0 ? workspaceMenu : undefined} onCompose={() => setDialog("message")}>
@@ -181,6 +191,7 @@ export function AppShell() {
       <CreateChannelDialog open={dialog === "channel"} onOpenChange={close} />
       <NewMessageDialog open={dialog === "message"} onOpenChange={close} />
       <QuickSwitcher open={dialog === "switcher"} onOpenChange={close} />
+      <SearchDialog open={dialog === "search"} onOpenChange={close} />
       <Toaster />
     </div>
   );

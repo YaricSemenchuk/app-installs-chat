@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import {
   MESSAGES_PAGE_SIZE,
+  type FileDto,
   type MessageDeletedDto,
   type MessageDto,
   type MessagesPageDto,
@@ -54,7 +55,7 @@ function merge(items: ChatMessage[], incoming: MessageDto[]): ChatMessage[] {
 
 const errorText = (err: unknown, fallback: string) => (err instanceof Error ? err.message : fallback);
 
-type SendOptions = { parentId?: string; alsoInChannel?: boolean };
+type SendOptions = { parentId?: string; alsoInChannel?: boolean; files?: FileDto[] };
 
 type Store = {
   feeds: Record<string, Feed>;
@@ -117,6 +118,7 @@ export const useMessages = create<Store>((set, get) => {
         body: {
           clientMsgId: message.clientMsgId,
           text: message.text,
+          fileIds: message.files.map((f) => f.id),
           ...(message.parentId ? { parentId: message.parentId, alsoInChannel: message.alsoInChannel } : {}),
         },
       });
@@ -240,6 +242,7 @@ export const useMessages = create<Store>((set, get) => {
         replyUserIds: [],
         lastReplyAt: null,
         reactions: [],
+        files: opts.files ?? [],
         local: "sending",
       };
       // Ответивший следит за тредом (так решает и сервер).
