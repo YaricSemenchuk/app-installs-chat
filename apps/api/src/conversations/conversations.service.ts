@@ -1,11 +1,12 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable } from "@nestjs/common";
-import type {
-  BootDto,
-  ConversationDto,
-  CreateChannelInput,
-  DirectoryChannelDto,
-  EventDto,
-  UpdateConversationInput,
+import {
+  transliterate,
+  type BootDto,
+  type ConversationDto,
+  type CreateChannelInput,
+  type DirectoryChannelDto,
+  type EventDto,
+  type UpdateConversationInput,
 } from "@teamchat/shared";
 import { toConversationInfoDto, toMessageDto, toUserDto } from "../common/mappers.js";
 import { PrismaService, type Tx } from "../db/prisma.service.js";
@@ -110,7 +111,20 @@ export class ConversationsService {
 
   async directory(me: users, query?: string): Promise<DirectoryChannelDto[]> {
     const rows = await this.prisma.conversations.findMany({
-      where: { kind: "public", ...(query ? { name: { contains: query.toLowerCase() } } : {}) },
+      where: {
+        kind: "public",
+        // Имена латиницей, поэтому ищем и по транслиту запроса; описание и тему — как есть.
+        ...(query
+          ? {
+              OR: [
+                { name: { contains: query.toLowerCase() } },
+                { name: { contains: transliterate(query) } },
+                { purpose: { contains: query, mode: "insensitive" as const } },
+                { topic: { contains: query, mode: "insensitive" as const } },
+              ],
+            }
+          : {}),
+      },
       include: { conversation_members: { select: { user_id: true } } },
       orderBy: [{ archived_at: { sort: "desc", nulls: "first" } }, { name: "asc" }],
       take: 200,

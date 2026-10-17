@@ -201,12 +201,32 @@ const translit: Record<string, string> = {
   ч: "ch", ш: "sh", щ: "shch", ъ: "", ы: "y", ь: "", э: "e", ю: "iu", я: "ia",
 };
 
+// Кириллица (ru/uk) → латиница, в нижнем регистре; остальные символы как есть.
+export function transliterate(text: string): string {
+  return [...text.toLowerCase()].map((ch) => translit[ch] ?? ch).join("");
+}
+
+// Поиск, которому всё равно, на какой раскладке имя и запрос: «бор» находит boris, «mark» — Марка.
+// -1 — не подходит, 0 — начинается с запроса (такие выше), 1 — содержит его.
+export function matchRank(text: string, query: string): number {
+  const q = query.trim().toLowerCase();
+  if (!q) return 0;
+  const hay = [text.toLowerCase(), transliterate(text)];
+  const needles = [q, transliterate(q)];
+  let rank = -1;
+  for (const h of hay) {
+    for (const n of needles) {
+      if (h.startsWith(n)) return 0;
+      if (h.includes(n)) rank = 1;
+    }
+  }
+  return rank;
+}
+
 // Имя канала из того, что человек напечатал: строчные латинские буквы, цифры, «-» и «_»;
 // кириллица транслитерируется, пробелы и прочее становятся дефисом.
 export function normalizeChannelName(raw: string): string {
-  return [...raw.toLowerCase()]
-    .map((ch) => translit[ch] ?? ch)
-    .join("")
+  return transliterate(raw)
     .replace(/[\s.]+/g, "-")
     .replace(/[^a-z0-9_-]/g, "")
     .replace(/-{2,}/g, "-")
