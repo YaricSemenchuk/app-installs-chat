@@ -75,7 +75,7 @@ Google на 3299 — dev-сервер для них не нужен. Тольк�
 | `BOOTSTRAP_OWNER_EMAIL` | почта первого владельца |
 | `WORKSPACE_NAME` | название рабочего пространства |
 | `ALLOWED_EMAIL_DOMAINS` | домены, с которых можно войти без приглашения, через запятую |
-| `RESEND_API_KEY` | ключ Resend (обязателен в production) |
+| `RESEND_API_KEY` | ключ Resend. Пока не задан, письма не уходят, а пишутся в лог сервиса (Railway → Logs): так владелец берёт код для первого входа и ссылки-приглашения |
 | `EMAIL_FROM` | отправитель, домен подтверждён в Resend |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | необязательно: вход через Google |
 | `STORAGE_DRIVER` | `s3` |

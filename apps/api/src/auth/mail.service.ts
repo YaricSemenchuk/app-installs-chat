@@ -11,7 +11,12 @@ export class MailService {
 
   async send(mail: Mail): Promise<void> {
     if (!config.RESEND_API_KEY) {
-      if (isProd) throw new Error("RESEND_API_KEY is not set");
+      if (isProd) {
+        // Почта ещё не подключена: письмо видно только в логе сервиса (Railway → Logs), владелец берёт оттуда
+        // код или ссылку-приглашение. Как только задан RESEND_API_KEY, письма уходят как обычно.
+        this.log.warn(`почта не настроена, письмо не отправлено → ${mail.to}: ${mail.subject}\n${mail.text}`);
+        return;
+      }
       // Локально письма не уходят наружу: пишем их в .dev-mail.log (его читают и e2e-тесты).
       await appendFile(resolve(process.cwd(), ".dev-mail.log"), JSON.stringify({ at: new Date().toISOString(), ...mail }) + "\n");
       this.log.log(`→ ${mail.to}: ${mail.subject}`);

@@ -56,9 +56,9 @@ function load(): Config {
     for (const issue of parsed.error.issues) console.error(`env ${issue.path.join(".")}: ${issue.message}`);
     process.exit(1);
   }
+  // Без почты сервер всё равно стартует: письма уходят в лог (см. MailService), чтобы владелец мог войти первым.
   if (parsed.data.NODE_ENV === "production" && !parsed.data.RESEND_API_KEY) {
-    console.error("env RESEND_API_KEY: обязателен в production, иначе коды входа не дойдут");
-    process.exit(1);
+    console.warn("env RESEND_API_KEY не задан: письма не отправляются, коды входа и приглашения пишутся в лог сервиса");
   }
   // Диск контейнера на Railway стирается при каждом деплое: в production файлы только в бакете.
   if (parsed.data.NODE_ENV === "production" && parsed.data.STORAGE_DRIVER !== "s3") {
