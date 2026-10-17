@@ -9,6 +9,7 @@ import { bootKey, queryClient } from "../data/boot";
 import { Button } from "../ui/Button";
 import { TextField } from "../ui/TextField";
 import s from "./SignInPage.module.scss";
+import { desktop } from "../desktop/bridge";
 
 type Step = { kind: "email" } | { kind: "code"; email: string };
 export type InviteContext = { token: string; email: string | null };
@@ -20,6 +21,7 @@ const googleErrors: Record<string, string> = {
   state: "Сессия входа устарела. Попробуйте ещё раз",
   exchange: "Google не ответил. Попробуйте ещё раз или войдите по коду",
   unknown: "Не получилось войти через Google. Попробуйте ещё раз",
+  desktop: "Ссылка для входа в приложение устарела. Нажмите «Войти через Google» ещё раз",
 };
 
 export function SignInPage({ invite, intro }: { invite?: InviteContext; intro?: ReactNode }) {
@@ -32,6 +34,7 @@ export function SignInPage({ invite, intro }: { invite?: InviteContext; intro?: 
   const [busy, setBusy] = useState(false);
   const googleError = params.get("error");
   const [error, setError] = useState<string | null>(googleError ? (googleErrors[googleError] ?? googleErrors.unknown!) : null);
+  const [desktopWaiting, setDesktopWaiting] = useState(false);
   const [resent, setResent] = useState(false);
   const emailLocked = Boolean(invite?.email);
 
@@ -85,10 +88,22 @@ export function SignInPage({ invite, intro }: { invite?: InviteContext; intro?: 
             )}
             {providers.data?.google && (
               <>
-                <a className={s.google} href={googleHref}>
+                <a
+                  className={s.google}
+                  href={googleHref}
+                  onClick={(e) => {
+                    // В приложении Google не пускает во встроенное окно: вход идёт в системном браузере.
+                    if (!desktop) return;
+                    e.preventDefault();
+                    desktop.signInWithGoogle(invite?.token);
+                    setError(null);
+                    setDesktopWaiting(true);
+                  }}
+                >
                   <GoogleMark />
                   Войти через Google
                 </a>
+                {desktopWaiting && <p className={s.lead} role="status">Продолжите вход в открывшемся браузере, потом вернитесь сюда.</p>}
                 <div className={s.or} role="separator">
                   <span>или по коду из письма</span>
                 </div>

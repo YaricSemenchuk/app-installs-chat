@@ -1,0 +1,141 @@
+@use "../styles/mixins" as *;
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+}
+
+.heading {
+  margin: 0;
+  color: var(--color-text);
+  @include type(title);
+}
+
+.switches {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.permission {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8) var(--space-16);
+  padding: var(--space-12);
+  border-radius: var(--radius-input);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  @include type(body);
+
+  p {
+    flex: 1;
+    min-width: 220px;
+    margin: 0;
+  }
+}
+
+.test {
+  display: flex;
+}
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-8) var(--space-16);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-accent-soft);
+  color: var(--color-text);
+  @include type(body);
+
+  > svg {
+    flex: none;
+    width: var(--size-icon);
+    height: var(--size-icon);
+    color: var(--color-accent);
+  }
+
+  > span {
+    flex: 1;
+  }
+}
+
+// Страницы /desktop-auth и /download — вне оболочки чата.
+.standalone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: var(--space-24) var(--space-16);
+  background: var(--color-bg);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  width: min(520px, 100%);
+  padding: var(--space-32);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  color: var(--color-text);
+
+  h1 {
+    margin: 0;
+    @include type(heading-s);
+  }
+
+  p {
+    margin: 0;
+    color: var(--color-text-secondary);
+    @include type(body-read);
+  }
+}
+
+.logo {
+  width: 48px;
+  height: 48px;
+}
+
+.downloads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
+.steps {
+  margin: 0;
+  padding-left: var(--space-24);
+  color: var(--color-text-secondary);
+  @include type(body-read);
+
+  li + li {
+    margin-top: var(--space-4);
+  }
+}
+
+.download {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  height: var(--size-control-m);
+  padding: 0 var(--space-16);
+  border-radius: var(--radius-button);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  text-decoration: none;
+  @include type(label);
+
+  svg {
+    width: var(--size-icon);
+    height: var(--size-icon);
+  }
+
+  &:hover {
+    background: var(--color-accent-hover);
+  }
+}

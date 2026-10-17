@@ -2,7 +2,16 @@
 // сервер досылает пропущенное. События применяются идемпотентно, повтор не вредит.
 import { io, type Socket } from "socket.io-client";
 import { create } from "zustand";
-import { SOCKET_PATH, type BootDto, type ConversationDto, type EventDto, type PresenceEventDto } from "@teamchat/shared";
+import {
+  NOTIFICATION_EVENT,
+  SOCKET_PATH,
+  type BootDto,
+  type ConversationDto,
+  type EventDto,
+  type NotificationDto,
+  type PresenceEventDto,
+} from "@teamchat/shared";
+import { handleNotification } from "../notifications/notify";
 import { api } from "../api/http";
 import { adminUsersKey, bootKey, getBoot, queryClient, updateBoot, updateConversation, upsertUser } from "../data/boot";
 
@@ -97,6 +106,9 @@ function apply(ev: EventDto) {
     case "reaction.removed":
       useMessages.getState().applyReaction(ev.payload, ev.kind === "reaction.added");
       break;
+    case "preferences.updated":
+      updateBoot((b) => ({ ...b, preferences: ev.payload }));
+      break;
     case "conversation.updated":
       updateConversation(ev.payload.id, (c) => ({ ...c, ...ev.payload }));
       break;
@@ -149,6 +161,7 @@ export function startRealtime(initialEventId: number, onUnauthorized: () => void
   socket = io({ path: SOCKET_PATH, transports: ["websocket"], withCredentials: true });
   socket.on("connect", () => socket?.emit("hello", { lastEventId: Math.max(0, watermark - REPLAY_OVERLAP) }));
   socket.on("events", (batch: EventDto[]) => batch.forEach(apply));
+  socket.on(NOTIFICATION_EVENT, (n: NotificationDto) => handleNotification(n));
   socket.on("synced", () => {
     clearTimeout(restoredTimer);
     if (wasOnline) {

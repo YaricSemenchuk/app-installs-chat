@@ -8,6 +8,10 @@ import { CreateChannelDialog } from "../channels/CreateChannelDialog";
 import { NewMessageDialog } from "../channels/NewMessageDialog";
 import { QuickSwitcher } from "../channels/QuickSwitcher";
 import { SearchDialog } from "../search/SearchDialog";
+import { desktop } from "../desktop/bridge";
+import { NotifyBanner, UpdateBanner } from "../notifications/Banners";
+import { setNavigator } from "../notifications/notify";
+import { PreferencesDialog } from "../notifications/PreferencesDialog";
 import { Sidebar, SidebarItem, SidebarSection, type SidebarEntry } from "../chat/Sidebar";
 import { Titlebar } from "../chat/Titlebar";
 import { displayOf, isOnline, queryClient, useBoot } from "../data/boot";
@@ -22,7 +26,7 @@ import type { MenuEntry } from "../ui/Menu";
 import { Toaster } from "../ui/Toaster";
 import s from "./AppShell.module.scss";
 
-type Dialog = "invite" | "profile" | "channel" | "message" | "switcher" | "search" | null;
+type Dialog = "invite" | "profile" | "preferences" | "channel" | "message" | "switcher" | "search" | null;
 
 function dmEntry(boot: BootDto, c: ConversationDto): SidebarEntry {
   if (c.kind === "group_dm") return { kind: "group", names: dmPeople(boot, c).map(displayOf) };
@@ -79,11 +83,25 @@ export function AppShell() {
       } else if (key === "g" || key === "п") {
         e.preventDefault();
         setDialog((d) => (d === "search" ? null : "search"));
+      } else if (key === "," || key === "б") {
+        e.preventDefault();
+        setDialog((d) => (d === "preferences" ? null : "preferences"));
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  // Клик по уведомлению (браузерному или системному) ведёт сюда, без перезагрузки страницы.
+  useEffect(() => setNavigator((path) => navigate(path)), [navigate]);
+
+  // Непрочитанное — в заголовке вкладки и на значке приложения: те же числа, что и бейджи в сайдбаре.
+  const badge = (boot.data?.conversations ?? []).reduce((n, c) => n + (isChannelKind(c.kind) ? c.mentionCount : c.unreadCount), 0);
+  useEffect(() => {
+    const base = boot.data?.workspace.name ? `${boot.data.workspace.name} — чат` : "Чат команды";
+    document.title = badge > 0 ? `(${badge}) ${base}` : base;
+    desktop?.setBadge(badge);
+  }, [badge, boot.data?.workspace.name]);
 
   if (boot.error && isUnauthorized(boot.error)) return <Navigate to="/signin" replace />;
   if (boot.error) {
@@ -131,6 +149,7 @@ export function AppShell() {
         activity={0}
         onSignOut={signOut}
         onProfile={() => setDialog("profile")}
+        onPreferences={() => setDialog("preferences")}
         onSearch={() => setDialog("search")}
       />
       <div className={s.body}>
@@ -183,11 +202,14 @@ export function AppShell() {
         </Sidebar>
         <main className={s.main}>
           {(status === "reconnecting" || status === "offline" || status === "restored") && <ConnectionBanner state={status} />}
+          {!desktop && <NotifyBanner prefs={data.preferences} />}
+          <UpdateBanner />
           <Outlet />
         </main>
       </div>
       <InviteDialog open={dialog === "invite"} onOpenChange={close} isAdmin={admin} workspace={workspace.name} />
       <ProfileDialog me={me} open={dialog === "profile"} onOpenChange={close} />
+      <PreferencesDialog open={dialog === "preferences"} onOpenChange={close} />
       <CreateChannelDialog open={dialog === "channel"} onOpenChange={close} />
       <NewMessageDialog open={dialog === "message"} onOpenChange={close} />
       <QuickSwitcher open={dialog === "switcher"} onOpenChange={close} />

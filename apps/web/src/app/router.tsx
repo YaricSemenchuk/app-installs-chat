@@ -2,6 +2,9 @@ import { createBrowserRouter, Navigate } from "react-router";
 import { Bookmark, MessageSquareText, SearchX, SendHorizontal } from "lucide-react";
 import { DirectoryPage } from "../channels/DirectoryPage";
 import { DesignPage } from "../design/DesignPage";
+import { DesktopAuthPage } from "../desktop/DesktopAuthPage";
+import { DownloadPage } from "../desktop/DownloadPage";
+import { MessageRedirect } from "../desktop/MessageRedirect";
 import { useBoot } from "../data/boot";
 import { FilesPage } from "../files/FilesPage";
 import { ConversationPage } from "../pages/ConversationPage";
@@ -26,12 +29,15 @@ export const router = createBrowserRouter([
   { path: "/invite/:token", element: <InvitePage /> },
   { path: "/welcome", element: <OnboardingPage /> },
   { path: "/design", element: <DesignPage /> },
+  { path: "/desktop-auth", element: <DesktopAuthPage /> },
+  { path: "/download", element: <DownloadPage /> },
   {
     path: "/",
     element: <AppShell />,
     children: [
       { index: true, element: <OpenDefaultConversation /> },
       { path: "c/:conversationId", element: <ConversationPage /> },
+      { path: "m/:messageId", element: <MessageRedirect /> },
       { path: "admin/people", element: <PeoplePage /> },
       { path: "browse", element: <DirectoryPage /> },
       { path: "threads", element: <StubPage icon={<MessageSquareText />} title="Треды" text={later} /> },

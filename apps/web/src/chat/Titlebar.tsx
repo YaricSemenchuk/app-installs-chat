@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Bell, LogOut, Search, UserRound } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bell, LogOut, Search, Settings, UserRound } from "lucide-react";
 import { Avatar } from "../ui/Avatar";
 import { Badge } from "../ui/Feedback";
 import { IconButton } from "../ui/IconButton";
@@ -6,11 +6,18 @@ import { Kbd } from "../ui/Kbd";
 import { Menu } from "../ui/Menu";
 import s from "./Titlebar.module.scss";
 
-type Props = { me: string; activity: number; onSignOut?: () => void; onProfile?: () => void; onSearch?: () => void };
+type Props = {
+  me: string;
+  activity: number;
+  onSignOut?: () => void;
+  onProfile?: () => void;
+  onPreferences?: () => void;
+  onSearch?: () => void;
+};
 
 const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
 
-export function Titlebar({ me, activity, onSignOut, onProfile, onSearch }: Props) {
+export function Titlebar({ me, activity, onSignOut, onProfile, onPreferences, onSearch }: Props) {
   return (
     <header className={s.titlebar}>
       <div className={s.nav}>
@@ -44,7 +51,11 @@ export function Titlebar({ me, activity, onSignOut, onProfile, onSearch }: Props
             </button>
           }
           items={[
-            ...(onProfile ? [{ kind: "item" as const, label: "Профиль", icon: <UserRound />, opensDialog: true, onSelect: onProfile }, { kind: "separator" as const }] : []),
+            ...(onProfile ? [{ kind: "item" as const, label: "Профиль", icon: <UserRound />, opensDialog: true, onSelect: onProfile }] : []),
+            ...(onPreferences
+              ? [{ kind: "item" as const, label: "Настройки", icon: <Settings />, kbd: isMac ? "⌘," : "Ctrl+,", opensDialog: true, onSelect: onPreferences }]
+              : []),
+            ...(onProfile || onPreferences ? [{ kind: "separator" as const }] : []),
             { kind: "item", label: "Выйти", icon: <LogOut />, onSelect: onSignOut, disabled: !onSignOut },
           ]}
         />
