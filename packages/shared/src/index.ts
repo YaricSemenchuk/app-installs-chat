@@ -192,6 +192,7 @@ export const OnboardingInput = z.object({
   realName: Name(80).default(""),
   title: Name(100).default(""),
   tz: z.string().max(64).optional(),
+  avatarFileId: z.uuid().optional(), // загруженная картинка (POST /files), станет фото профиля
 });
 export type OnboardingInput = z.infer<typeof OnboardingInput>;
 
@@ -201,6 +202,7 @@ export const ProfileInput = z.object({
   title: Name(100).optional(),
   pronouns: Name(30).optional(),
   tz: z.string().max(64).optional(),
+  avatarFileId: z.uuid().nullable().optional(), // null — убрать фото
 });
 export type ProfileInput = z.infer<typeof ProfileInput>;
 
@@ -224,6 +226,7 @@ export type UserDto = {
   statusEmoji: string;
   deactivated: boolean;
   onboarded: boolean;
+  avatarUrl: string | null; // квадратное фото 256 px; адрес меняется вместе с фото, поэтому кешируется надолго
 };
 
 export const ROLE_RANK: Record<Role, number> = { guest: 0, member: 1, admin: 2, owner: 3, primary_owner: 4 };
