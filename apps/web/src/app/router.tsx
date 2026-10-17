@@ -17,6 +17,7 @@ import { SignInPage } from "../pages/SignInPage";
 import { StubPage } from "../pages/StubPage";
 import { PeoplePage } from "../people/PeoplePage";
 import { SearchPage } from "../search/SearchPage";
+import { MyTasksPage } from "../tasks/MyTasksPage";
 import { AppShell } from "./AppShell";
 import { RouteError } from "../pages/RouteError";
 import { useIsMobile } from "../lib/useMobile";
@@ -63,6 +64,7 @@ export const router = createBrowserRouter([
           { path: "drafts", element: <StubPage icon={<SendHorizontal />} title="Черновики и отправленные" text={later} /> },
           { path: "saved", element: <StubPage icon={<Bookmark />} title="Сохранённое" text={later} /> },
           { path: "files", element: <FilesPage /> },
+          { path: "tasks", element: <MyTasksPage /> },
           { path: "search", element: <SearchPage /> },
           { path: "*", element: <StubPage icon={<SearchX />} title="Такой страницы нет" text="Проверьте адрес или выберите разговор слева" /> },
         ],

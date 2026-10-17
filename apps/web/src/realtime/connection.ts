@@ -5,7 +5,9 @@ import { create } from "zustand";
 import {
   NOTIFICATION_EVENT,
   CALL_EVENT,
+  TASKS_EVENT,
   type CallEventDto,
+  type TasksEventDto,
   SOCKET_PATH,
   type BootDto,
   type ConversationDto,
@@ -20,6 +22,7 @@ import { adminUsersKey, bootKey, getBoot, queryClient, updateBoot, updateConvers
 
 const ACTIVE_EVERY_MS = 60_000;
 import { useMessages } from "../data/messages";
+import { refreshChannelTasks } from "../data/tasks";
 
 export type ConnectionStatus = "connecting" | "online" | "reconnecting" | "offline" | "restored";
 
@@ -166,6 +169,7 @@ export function startRealtime(initialEventId: number, onUnauthorized: () => void
   socket.on("events", (batch: EventDto[]) => batch.forEach(apply));
   socket.on(NOTIFICATION_EVENT, (n: NotificationDto) => handleNotification(n));
   socket.on(CALL_EVENT, (e: CallEventDto) => applyCallEvent(e));
+  socket.on(TASKS_EVENT, (e: TasksEventDto) => refreshChannelTasks(e.conversationId));
   socket.on("synced", () => {
     // Звонки эфемерны и в журнал не попадают: после (пере)подключения читаем их заново.
     void loadCalls();

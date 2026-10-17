@@ -23,6 +23,8 @@ import { ThreadPanel } from "../chat/ThreadPanel";
 import { displayOf, isOnline, queryClient, updateConversation, useBoot, userName } from "../data/boot";
 import { conversationTitle, dmPeople, isSelfDm, joinChannel, openDm } from "../data/conversations";
 import { useMessages } from "../data/messages";
+import { useIntegrations } from "../data/tasks";
+import { TasksPanel } from "../tasks/TasksPanel";
 import { RichEditor, type Sources } from "../editor/RichEditor";
 import type { SuggestItem } from "../editor/extensions";
 import { plural } from "../lib/format";
@@ -141,6 +143,9 @@ function Conversation({ boot, conv }: { boot: BootDto; conv: ConversationDto }) 
   const [params, setParams] = useSearchParams();
   const threadId = params.get("thread");
   const linkTarget = params.get("m");
+  const integrations = useIntegrations();
+  // Справа одна панель: тред или задачи канала (?panel=tasks).
+  const tasksOpen = !threadId && params.get("panel") === "tasks" && isChannelKind(conv.kind);
   const feed = useMessages((st) => st.feeds[conv.id]);
   const loadLatest = useMessages((st) => st.loadLatest);
   const send = useMessages((st) => st.send);
@@ -277,6 +282,7 @@ function Conversation({ boot, conv }: { boot: BootDto; conv: ConversationDto }) 
       call={conv.isMember ? <CallButton conversationId={conv.id} dm={false} /> : undefined}
       onDetails={conv.isMember ? () => setDetails("about") : undefined}
       onMembers={conv.isMember ? () => setDetails("members") : undefined}
+      tasks={integrations.jira || integrations.figma ? { open: tasksOpen, onToggle: () => setParams(tasksOpen ? {} : { panel: "tasks" }) } : undefined}
     />
   ) : (
     <ConversationHeader
@@ -371,6 +377,7 @@ function Conversation({ boot, conv }: { boot: BootDto; conv: ConversationDto }) 
           )}
         </div>
         {threadId && <ThreadPanel key={threadId} parentId={threadId} onClose={closeThread} />}
+        {tasksOpen && <TasksPanel boot={boot} conv={conv} onClose={() => setParams({})} />}
       </div>
       {channel && conv.isMember && (
         <ChannelDetailsDialog boot={boot} conv={conv} open={details !== null} onOpenChange={(v) => !v && setDetails(null)} initialTab={details ?? "about"} />

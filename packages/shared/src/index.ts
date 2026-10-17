@@ -360,7 +360,11 @@ export type MessageDto = {
   lastReplyAt: string | null;
   reactions: ReactionDto[];
   files: FileDto[]; // по порядку вложения
+  unfurls: UnfurlDto[]; // карточки ссылок; появляются событием message.updated чуть позже самого сообщения
 };
+
+// Пока карточки строятся только для ссылок на Figma.
+export type UnfurlDto = { id: string; url: string; kind: "figma"; figma: FigmaPreviewDto };
 
 export type ThreadSummaryDto = Pick<MessageDto, "replyCount" | "replyUserIds" | "lastReplyAt"> & {
   conversationId: string;
@@ -538,3 +542,147 @@ export type CallEventDto =
 
 // Сколько звонит вызов в ЛС, пока звонящий один.
 export const CALL_RING_SECONDS = 45;
+
+// ───────────── задачи: Jira и Figma ─────────────
+// Чат ходит в Jira одним служебным токеном и только читает. Человека находим в Jira по почте.
+// Канал привязывают к JQL (обычно «project = DEV») и к файлам Figma: нерешённые комментарии в них — правки по дизайну.
+
+export type IntegrationsDto = {
+  jira: { site: string } | null; // адрес Jira; null — интеграция не настроена
+  figma: boolean;
+};
+
+// Как statusCategory в Jira: к выполнению / в работе / готово.
+export type StatusCategory = "new" | "indeterminate" | "done";
+// 1 — наивысший, 5 — самый низкий. Порядок задач задаёт сама Jira, уровень нужен только для значка.
+export type PriorityLevel = 1 | 2 | 3 | 4 | 5;
+
+export type JiraPersonDto = {
+  accountId: string;
+  name: string;
+  avatarUrl: string | null;
+  userId: string | null; // человек в чате, если нашли его по почте
+};
+
+// Ссылка на макет: файл и, если указан, кадр (node-id из адреса, через двоеточие, как в API Figma).
+export type FigmaRefDto = { url: string; fileKey: string; nodeId: string | null };
+
+export type JiraIssueDto = {
+  key: string; // DEV-1234
+  url: string; // карточка в Jira
+  summary: string;
+  type: string; // «Задача», «Ошибка»…
+  status: { name: string; category: StatusCategory };
+  priority: { id: string; name: string; level: PriorityLevel } | null;
+  assignee: JiraPersonDto | null;
+  dueDate: string | null; // YYYY-MM-DD
+  updatedAt: string;
+  figma: FigmaRefDto[]; // макеты из описания задачи
+};
+
+// Задачи по приоритету: от самой важной, внутри приоритета — недавно изменённые выше.
+export type JiraListDto = {
+  issues: JiraIssueDto[];
+  truncated: boolean; // нашлось больше JIRA_ISSUES_MAX — показаны первые
+  error: string | null; // Jira не ответила или не приняла JQL; issues тогда пустой
+};
+
+export type FigmaCommentDto = {
+  id: string;
+  fileKey: string;
+  fileName: string;
+  nodeId: string | null; // к какому кадру привязан
+  text: string;
+  author: { handle: string; avatarUrl: string | null };
+  createdAt: string;
+  replyCount: number;
+  url: string; // открыть комментарий в Figma
+};
+
+export type FigmaFileDto = { fileKey: string; name: string | null; url: string };
+
+export type TaskSourceDto = {
+  jql: string | null;
+  figmaFiles: FigmaFileDto[];
+  updatedBy: string | null;
+  updatedAt: string | null;
+};
+
+export type ChannelTasksDto = {
+  source: TaskSourceDto;
+  jira: JiraListDto | null; // null — JQL не задан или Jira не подключена
+  figma: { comments: FigmaCommentDto[]; error: string | null } | null; // null — файлов нет или Figma не подключена
+};
+
+export type MyTasksDto = {
+  account: JiraPersonDto | null; // null — в Jira нет аккаунта с почтой из чата
+  jira: JiraListDto;
+};
+
+export type JiraProjectDto = { key: string; name: string; avatarUrl: string | null };
+
+export type FigmaPreviewStatus = "ready" | "pending" | "forbidden" | "missing" | "failed";
+export type FigmaPreviewDto = {
+  id: string;
+  url: string; // открыть в Figma
+  fileKey: string;
+  nodeId: string | null;
+  status: FigmaPreviewStatus; // forbidden — у аккаунта токена нет доступа к файлу
+  fileName: string;
+  nodeName: string;
+  image: { url: string; width: number; height: number } | null; // /api/figma/previews/<id>/image
+  lastModified: string | null;
+};
+
+export const JIRA_ISSUES_MAX = 200;
+export const JQL_MAX = 2000;
+export const FIGMA_FILES_MAX = 10;
+export const FIGMA_UNFURLS_PER_MESSAGE = 3;
+
+const FIGMA_HOST_RE = /^(www\.)?figma\.com$/;
+const FIGMA_PATH_RE = /^\/(?:file|design|proto|board|slides|deck)\/([A-Za-z0-9]{10,128})(?:\/branch\/([A-Za-z0-9]{10,128}))?(?:\/|$)/;
+
+// https://www.figma.com/design/<key>/<название>?node-id=12-34 → ключ файла (у ветки — ключ ветки) и кадр «12:34».
+export function parseFigmaUrl(raw: string): FigmaRefDto | null {
+  let u: URL;
+  try {
+    u = new URL(raw.trim());
+  } catch {
+    return null;
+  }
+  if (u.protocol !== "https:" || !FIGMA_HOST_RE.test(u.hostname)) return null;
+  const m = FIGMA_PATH_RE.exec(u.pathname);
+  if (!m) return null;
+  const node = u.searchParams.get("node-id")?.replace("-", ":") ?? "";
+  return { url: u.toString(), fileKey: m[2] ?? m[1]!, nodeId: /^\d+:\d+$/.test(node) ? node : null };
+}
+
+export const figmaFileUrl = (fileKey: string, nodeId?: string | null) =>
+  `https://www.figma.com/file/${fileKey}${nodeId ? `?node-id=${encodeURIComponent(nodeId.replace(":", "-"))}` : ""}`;
+
+export const TaskSourceInput = z.object({
+  jql: z
+    .string()
+    .trim()
+    .max(JQL_MAX, `JQL длиннее ${JQL_MAX} символов`)
+    .nullable()
+    .transform((v) => v || null),
+  figmaFiles: z
+    .array(z.string().trim().max(2000))
+    .max(FIGMA_FILES_MAX, `Не больше ${FIGMA_FILES_MAX} файлов Figma`)
+    .default([])
+    .refine((urls) => urls.every((u) => parseFigmaUrl(u) !== null), { message: "Нужна ссылка на файл Figma вида https://www.figma.com/design/…" }),
+});
+export type TaskSourceInput = z.infer<typeof TaskSourceInput>;
+
+export const FigmaPreviewQuery = z.object({
+  url: z
+    .string()
+    .max(2000)
+    .refine((u) => parseFigmaUrl(u) !== null, { message: "Это не ссылка на Figma" }),
+});
+export type FigmaPreviewQuery = z.infer<typeof FigmaPreviewQuery>;
+
+// Сервер → клиент, мимо журнала: у канала поменялись источники задач — перечитать GET /conversations/:id/tasks.
+export const TASKS_EVENT = "tasks";
+export type TasksEventDto = { conversationId: string };

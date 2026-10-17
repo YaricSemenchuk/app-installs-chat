@@ -7,6 +7,7 @@ import { useMessages, type ChatMessage } from "../data/messages";
 import { RichEditor } from "../editor/RichEditor";
 import { EmojiPicker } from "../emoji/EmojiPicker";
 import { Attachments } from "../files/Attachments";
+import { FigmaUnfurls } from "../tasks/FigmaUnfurls";
 import { emojiChar, rememberEmoji, useEmoji, useRecentEmoji } from "../emoji/emoji";
 import { dayLabel, formatFull, formatTime, plural } from "../lib/format";
 import { UserCard } from "../people/UserCard";
@@ -92,6 +93,7 @@ export function MessageRow({ message: m, prev, place }: { message: ChatMessage; 
       <>
         {m.text.trim() !== "" ? <Markup text={m.text} boot={boot} mentionsMe={mentionsMe} suffix={edited} /> : edited}
         {m.files.length > 0 && <Attachments files={m.files} author={author} time={formatFull(m.createdAt)} />}
+        {m.unfurls?.length > 0 && <FigmaUnfurls messageId={m.id} unfurls={m.unfurls} canHide={mine && !m.local} />}
       </>
     );
   }

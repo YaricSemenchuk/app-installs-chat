@@ -6,15 +6,19 @@ import type {
   ConversationKind,
   EventDto,
   DesktopPlatform,
+  FigmaPreviewDto,
+  FigmaPreviewStatus,
   FileDto,
   InstallerDto,
   InviteDto,
   MessageDto,
   ReactionDto,
   Role,
+  UnfurlDto,
   UserDto,
 } from "@teamchat/shared";
-import type { conversations, desktop_installers, events, files, invites, messages, users } from "../generated/prisma/client.js";
+import { figmaFileUrl } from "@teamchat/shared";
+import type { conversations, desktop_installers, events, figma_previews, files, invites, message_unfurls, messages, users } from "../generated/prisma/client.js";
 
 // Версия в адресе аватара — от ключа объекта: новое фото → новый адрес, старое можно кешировать надолго.
 const avatarUrl = (u: users) => (u.avatar_key ? `/api/users/${u.id}/avatar?v=${createHash("sha1").update(u.avatar_key).digest("hex").slice(0, 12)}` : null);
@@ -90,11 +94,41 @@ export function groupReactions(rows: ReactionRow[]): ReactionDto[] {
   return [...byEmoji].map(([emoji, userIds]) => ({ emoji, userIds }));
 }
 
+// Превью макета: картинка раздаётся через API, версия в адресе меняется вместе с картинкой.
+export function toFigmaPreviewDto(p: figma_previews): FigmaPreviewDto {
+  const nodeId = p.node_id || null;
+  const image =
+    p.image_key && p.width && p.height
+      ? { url: `/api/figma/previews/${p.id}/image?v=${createHash("sha1").update(p.image_key).digest("hex").slice(0, 12)}`, width: p.width, height: p.height }
+      : null;
+  return {
+    id: p.id,
+    url: figmaFileUrl(p.file_key, nodeId),
+    fileKey: p.file_key,
+    nodeId,
+    status: p.status as FigmaPreviewStatus,
+    fileName: p.file_name,
+    nodeName: p.node_name,
+    image,
+    lastModified: p.last_modified?.toISOString() ?? null,
+  };
+}
+
+type UnfurlRow = message_unfurls & { figma_previews: figma_previews | null };
+
+// Пока карточки бывают только у ссылок на Figma; карточка без превью не показывается.
+function toUnfurls(rows: UnfurlRow[]): UnfurlDto[] {
+  return rows
+    .filter((u) => !u.hidden && u.figma_previews)
+    .map((u) => ({ id: u.id, url: u.url, kind: "figma" as const, figma: toFigmaPreviewDto(u.figma_previews!) }));
+}
+
 // Что приходит из базы вместе с сообщением (см. MESSAGE_INCLUDE в messages.service).
 export type MessageRow = messages & {
   message_mentions?: { user_id: string }[];
   reactions?: ReactionRow[];
   message_files?: { position: number; files: FileRow }[];
+  message_unfurls?: UnfurlRow[];
 };
 
 export function toMessageDto(m: MessageRow, mentions?: string[]): MessageDto {
@@ -118,6 +152,7 @@ export function toMessageDto(m: MessageRow, mentions?: string[]): MessageDto {
     lastReplyAt: m.last_reply_at?.toISOString() ?? null,
     reactions: deleted ? [] : groupReactions(m.reactions ?? []),
     files: deleted ? [] : [...(m.message_files ?? [])].sort((a, b) => a.position - b.position).map((mf) => toFileDto(mf.files)),
+    unfurls: deleted ? [] : toUnfurls(m.message_unfurls ?? []),
   };
 }
 
@@ -147,6 +182,7 @@ const MESSAGE_DEFAULTS: Omit<MessageDto, "id" | "seq" | "conversationId" | "user
   lastReplyAt: null,
   reactions: [],
   files: [],
+  unfurls: [],
 };
 
 export function toEventDto(e: events): EventDto {

@@ -53,6 +53,12 @@ function merge(items: ChatMessage[], incoming: MessageDto[]): ChatMessage[] {
   return [...kept, ...incoming].sort((a, b) => a.seq - b.seq);
 }
 
+// Только что созданное сообщение (событие или ответ на отправку). Если оно уже есть в ленте, там версия не старше:
+// карточка ссылки или реакция приходят событием раньше, чем медленный HTTP-ответ, и он не должен их стереть.
+function mergeNew(items: ChatMessage[], message: MessageDto): ChatMessage[] {
+  return items.some((m) => m.id === message.id && !m.local) ? items : merge(items, [message]);
+}
+
 const errorText = (err: unknown, fallback: string) => (err instanceof Error ? err.message : fallback);
 
 type SendOptions = { parentId?: string; alsoInChannel?: boolean; files?: FileDto[] };
@@ -196,12 +202,12 @@ export const useMessages = create<Store>((set, get) => {
     receive(message) {
       if (message.parentId) {
         const t = get().threads[message.parentId];
-        if (t?.loaded) patchThread(message.parentId, message.conversationId, (x) => ({ ...x, items: merge(x.items, [message]) }));
+        if (t?.loaded) patchThread(message.parentId, message.conversationId, (x) => ({ ...x, items: mergeNew(x.items, message) }));
         if (!message.alsoInChannel) return;
       }
       const f = get().feeds[message.conversationId];
       if (!f?.loaded) return; // ленту загрузим целиком, когда её откроют
-      patchFeed(message.conversationId, (x) => ({ ...x, items: merge(x.items, [message]) }));
+      patchFeed(message.conversationId, (x) => ({ ...x, items: mergeNew(x.items, message) }));
     },
 
     applyUpdate(message) {
@@ -243,6 +249,7 @@ export const useMessages = create<Store>((set, get) => {
         lastReplyAt: null,
         reactions: [],
         files: opts.files ?? [],
+        unfurls: [],
         local: "sending",
       };
       // Ответивший следит за тредом (так решает и сервер).

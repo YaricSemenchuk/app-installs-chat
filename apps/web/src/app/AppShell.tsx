@@ -1,7 +1,7 @@
 // S03 — каркас: заголовок окна, сайдбар, баннер соединения, текущий экран.
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Navigate, Outlet, useLocation, useNavigate, useParams } from "react-router";
-import { Bookmark, Compass, Download, FileStack, Hash, MessageSquareText, MonitorDown, Plus, SendHorizontal, UserPlus, Users } from "lucide-react";
+import { Bookmark, Compass, Download, FileStack, Hash, ListChecks, MessageSquareText, MonitorDown, Plus, SendHorizontal, UserPlus, Users } from "lucide-react";
 import { isAdminRole, isChannelKind, type BootDto, type ConversationDto } from "@teamchat/shared";
 import { api, isUnauthorized } from "../api/http";
 import { CreateChannelDialog } from "../channels/CreateChannelDialog";
@@ -21,6 +21,7 @@ import { Titlebar } from "../chat/Titlebar";
 import { displayOf, isOnline, queryClient, useBoot } from "../data/boot";
 import { conversationTitle, dmPeople, isSelfDm } from "../data/conversations";
 import { useMessages } from "../data/messages";
+import { useIntegrations } from "../data/tasks";
 import { loadEmoji } from "../emoji/emoji";
 import { InviteDialog } from "../people/InviteDialog";
 import { ProfileDialog } from "../people/ProfileDialog";
@@ -65,6 +66,7 @@ export function AppShell() {
   const calls = useCalls((x) => x.byConversation);
   const inCall = useCalls((x) => x.session !== null);
   const callsEnabled = useCalls((x) => x.enabled);
+  const integrations = useIntegrations();
   // Заранее, пока ничего не происходит: после деплоя посреди дня окно звонка и эмодзи уже будут в памяти.
   useEffect(() => prefetchWhenIdle(loadEmoji), []);
   useEffect(() => {
@@ -189,6 +191,9 @@ export function AppShell() {
         <div className={s.side}>
         <Sidebar workspace={workspace.name} menu={workspaceMenu.length > 0 ? workspaceMenu : undefined} onCompose={() => setDialog("message")}>
           <ul className={s.navList}>
+            {integrations.jira && (
+              <SidebarItem entry={{ kind: "nav", label: "Мои задачи", icon: <ListChecks /> }} to="/tasks" />
+            )}
             <SidebarItem entry={{ kind: "nav", label: "Треды", icon: <MessageSquareText /> }} to="/threads" />
             <SidebarItem entry={{ kind: "nav", label: "Черновики и отправленные", icon: <SendHorizontal /> }} to="/drafts" />
             <SidebarItem entry={{ kind: "nav", label: "Сохранённое", icon: <Bookmark /> }} to="/saved" />

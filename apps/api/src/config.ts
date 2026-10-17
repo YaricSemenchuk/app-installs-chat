@@ -53,6 +53,29 @@ const Env = z.object({
     .string()
     .optional()
     .transform((v) => (v ? v : undefined)),
+  // Задачи из Jira Cloud: адрес сайта (https://<сайт>.atlassian.net), почта служебного аккаунта и его API-токен
+  // (id.atlassian.com → Security → API tokens). Чат только читает. Без всех трёх вкладки «Задачи» нет.
+  JIRA_BASE_URL: z
+    .string()
+    .optional()
+    .transform((v) => (v ? v.replace(/\/+$/, "") : undefined))
+    .pipe(z.url().optional()),
+  JIRA_EMAIL: z
+    .string()
+    .optional()
+    .transform((v) => (v ? v : undefined)),
+  JIRA_API_TOKEN: z
+    .string()
+    .optional()
+    .transform((v) => (v ? v : undefined)),
+  // Макеты Figma: персональный токен (Settings → Security → Personal access tokens) с правами
+  // file_content:read и file_comments:read. Без него превью и правки по дизайну выключены.
+  FIGMA_TOKEN: z
+    .string()
+    .optional()
+    .transform((v) => (v ? v : undefined)),
+  // Переопределяется только в e2e, чтобы не ходить в настоящую Figma.
+  FIGMA_API_URL: z.url().default("https://api.figma.com"),
   // Файлы: S3-совместимый бакет (Railway Buckets) или каталог на диске — для разработки и e2e.
   STORAGE_DRIVER: z.enum(["s3", "disk"]).default("disk"),
   STORAGE_DIR: z.string().default(".storage"),
@@ -82,6 +105,11 @@ function load(): Config {
   const livekit = [parsed.data.LIVEKIT_URL, parsed.data.LIVEKIT_API_KEY, parsed.data.LIVEKIT_API_SECRET].filter(Boolean).length;
   if (livekit !== 0 && livekit !== 3) {
     console.error("env LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET: для звонков нужны все три");
+    process.exit(1);
+  }
+  const jira = [parsed.data.JIRA_BASE_URL, parsed.data.JIRA_EMAIL, parsed.data.JIRA_API_TOKEN].filter(Boolean).length;
+  if (jira !== 0 && jira !== 3) {
+    console.error("env JIRA_BASE_URL, JIRA_EMAIL, JIRA_API_TOKEN: для задач из Jira нужны все три");
     process.exit(1);
   }
   // Диск контейнера на Railway стирается при каждом деплое: в production файлы только в бакете.

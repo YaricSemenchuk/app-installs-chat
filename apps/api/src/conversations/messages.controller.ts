@@ -12,6 +12,7 @@ import {
 import { CurrentUser, SessionGuard } from "../auth/session.guard.js";
 import { ZodPipe } from "../common/zod.pipe.js";
 import type { users } from "../generated/prisma/client.js";
+import { UnfurlsService } from "../tasks/unfurls.service.js";
 import { MessagesService } from "./messages.service.js";
 
 const Id = new ParseUUIDPipe();
@@ -21,7 +22,10 @@ const Emoji = new ZodPipe(ReactionInput.shape.emoji);
 @Controller()
 @UseGuards(SessionGuard)
 export class MessagesController {
-  constructor(private readonly messages: MessagesService) {}
+  constructor(
+    private readonly messages: MessagesService,
+    private readonly unfurls: UnfurlsService,
+  ) {}
 
   @Patch("messages/:id")
   edit(
@@ -36,6 +40,13 @@ export class MessagesController {
   @HttpCode(204)
   remove(@CurrentUser() me: users, @Param("id", Id) id: string): Promise<void> {
     return this.messages.remove(me, id);
+  }
+
+  // Убрать карточку ссылки (превью Figma) из своего сообщения.
+  @Post("messages/:id/unfurls/:unfurlId/hide")
+  @HttpCode(204)
+  hideUnfurl(@CurrentUser() me: users, @Param("id", Id) id: string, @Param("unfurlId", Id) unfurlId: string, @Body() _body: unknown): Promise<void> {
+    return this.unfurls.hide(me, id, unfurlId);
   }
 
   @Get("messages/:id/link")

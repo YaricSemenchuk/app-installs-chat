@@ -337,6 +337,24 @@ export function markupToPlainText(src: string, names: Names): string {
     .join("\n");
 }
 
+// Ссылки в тексте по порядку, без повторов: <url|подпись> и голые адреса, кроме тех, что в коде.
+export function extractLinks(text: string): string[] {
+  const urls = new Set<string>();
+  const walk = (nodes: Inline[]) => {
+    for (const n of nodes) {
+      if (n.t === "link") urls.add(n.url);
+      if (n.t === "bold" || n.t === "italic" || n.t === "strike" || n.t === "link") walk(n.c);
+    }
+  };
+  const list = (b: ListBlock) => b.items.forEach((it) => (walk(it.c), it.sub && list(it.sub)));
+  for (const b of parseMarkup(text)) {
+    if (b.t === "p") walk(b.c);
+    else if (b.t === "quote") b.lines.forEach(walk);
+    else if (b.t === "ul" || b.t === "ol") list(b);
+  }
+  return [...urls];
+}
+
 // Кого упомянули: обход разметки, поэтому токены в коде и экранированные «\<@…>» не считаются.
 export function extractMentions(text: string): { userIds: string[]; broadcast: Broadcast[] } {
   const userIds = new Set<string>();

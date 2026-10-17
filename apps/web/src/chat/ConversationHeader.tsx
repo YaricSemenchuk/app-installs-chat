@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { BellRing, Hash, Info, Link2, Pin } from "lucide-react";
+import { BellRing, Hash, Info, Link2, ListTodo, Pin } from "lucide-react";
 import { AvatarStack } from "../ui/Avatar";
 import { IconButton } from "../ui/IconButton";
 import { Tabs, type TabItem } from "../ui/Tabs";
@@ -16,6 +16,7 @@ export function ConversationHeader({
   bookmark,
   onDetails,
   onMembers,
+  tasks,
 }: {
   name: string;
   icon?: ReactNode;
@@ -27,6 +28,7 @@ export function ConversationHeader({
   bookmark?: string;
   onDetails?: () => void;
   onMembers?: () => void;
+  tasks?: { open: boolean; onToggle: () => void }; // вкладка «Задачи» (Jira и Figma) справа
 }) {
   const [tab, setTab] = useState("messages");
   const tabs: TabItem[] = [{ value: "messages", label: "Сообщения" }];
@@ -54,6 +56,11 @@ export function ConversationHeader({
         </p>
         <div className={s.actions}>
           {call}
+          {tasks && (
+            <IconButton label={tasks.open ? "Скрыть задачи" : "Задачи канала"} size="s" pressed={tasks.open} onClick={tasks.onToggle}>
+              <ListTodo />
+            </IconButton>
+          )}
           {members && (
             <button type="button" className={s.members} aria-label={`Участники: ${members.length}`} onClick={onMembers}>
               <AvatarStack names={members} ids={memberIds} />
