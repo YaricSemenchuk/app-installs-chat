@@ -1,7 +1,7 @@
 // S03 — каркас: заголовок окна, сайдбар, баннер соединения, текущий экран.
 import { useEffect, useRef, useState } from "react";
 import { Navigate, Outlet, useNavigate, useParams } from "react-router";
-import { Bookmark, Compass, FileStack, Hash, MessageSquareText, Plus, SendHorizontal, UserPlus, Users } from "lucide-react";
+import { Bookmark, Compass, Download, FileStack, Hash, MessageSquareText, MonitorDown, Plus, SendHorizontal, UserPlus, Users } from "lucide-react";
 import { isAdminRole, isChannelKind, type BootDto, type ConversationDto } from "@teamchat/shared";
 import { api, isUnauthorized } from "../api/http";
 import { CreateChannelDialog } from "../channels/CreateChannelDialog";
@@ -129,6 +129,8 @@ export function AppShell() {
   const workspaceMenu: MenuEntry[] = [
     ...(canInvite ? [{ kind: "item" as const, label: "Пригласить коллег", icon: <UserPlus />, opensDialog: true, onSelect: () => setDialog("invite") }] : []),
     ...(admin ? [{ kind: "item" as const, label: "Люди и роли", icon: <Users />, onSelect: () => navigate("/admin/people") }] : []),
+    ...(admin ? [{ kind: "item" as const, label: "Приложение для компьютера", icon: <MonitorDown />, onSelect: () => navigate("/admin/desktop") }] : []),
+    ...(!desktop ? [{ kind: "item" as const, label: "Скачать приложение", icon: <Download />, onSelect: () => navigate("/download") }] : []),
   ];
   const channelMenu: MenuEntry[] = [
     { kind: "item", label: "Создать канал", icon: <Plus />, opensDialog: true, onSelect: () => setDialog("channel") },

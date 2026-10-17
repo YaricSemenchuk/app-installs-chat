@@ -33,7 +33,7 @@ export function useUploads() {
       patch(key, (a) => ({ ...a, status: "uploading", progress: 0, error: undefined }));
       try {
         const ticket = await api<UploadTicketDto>("/files", { method: "POST", body: { name: file.name, size: file.size, mimetype: file.type } });
-        const done = await put(ticket.uploadUrl, file, (p) => patch(key, (a) => ({ ...a, progress: p })), (x) => xhrs.current.set(key, x));
+        const done = await putBytes<FileDto>(ticket.uploadUrl, file, (p) => patch(key, (a) => ({ ...a, progress: p })), (x) => xhrs.current.set(key, x));
         patch(key, (a) => ({ ...a, status: "ready", progress: 1, file: done }));
       } catch (err) {
         if ((err as Error).name === "AbortError") return;
@@ -111,10 +111,11 @@ export type Uploads = ReturnType<typeof useUploads>;
 // Один файл без композера — например, фото профиля.
 export async function uploadFile(file: File, onProgress: (p: number) => void = () => undefined): Promise<FileDto> {
   const ticket = await api<UploadTicketDto>("/files", { method: "POST", body: { name: file.name || "фото", size: file.size, mimetype: file.type } });
-  return put(ticket.uploadUrl, file, onProgress, () => undefined);
+  return putBytes<FileDto>(ticket.uploadUrl, file, onProgress, () => undefined);
 }
 
-function put(url: string, file: File, onProgress: (p: number) => void, onStart: (x: XMLHttpRequest) => void): Promise<FileDto> {
+// PUT сырых байтов с прогрессом; ответ — JSON. Отмена — abort() у XHR из onStart.
+export function putBytes<T>(url: string, file: Blob, onProgress: (p: number) => void, onStart: (x: XMLHttpRequest) => void): Promise<T> {
   return new Promise((resolve, reject) => {
     const x = new XMLHttpRequest();
     x.open("PUT", url);
@@ -127,7 +128,7 @@ function put(url: string, file: File, onProgress: (p: number) => void, onStart: 
       } catch {
         // ответ без тела
       }
-      if (x.status >= 200 && x.status < 300) resolve(body as FileDto);
+      if (x.status >= 200 && x.status < 300) resolve(body as T);
       else reject(new Error((body as { message?: string } | null)?.message ?? "Не загрузилось"));
     };
     x.onerror = () => reject(new Error("Нет связи с сервером"));

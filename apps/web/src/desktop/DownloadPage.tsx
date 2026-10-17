@@ -1,33 +1,55 @@
-// /download — установщики десктоп-приложения и как открыть неподписанную сборку.
+// /download — установщики приложения для вошедших и как открыть сборку без подписи.
 import { useQuery } from "@tanstack/react-query";
-import { Apple, Monitor } from "lucide-react";
-import type { DesktopInfoDto } from "@teamchat/shared";
-import { api } from "../api/http";
+import { Link, Navigate } from "react-router";
+import { isAdminRole, type DesktopInfoDto } from "@teamchat/shared";
+import { api, isUnauthorized } from "../api/http";
+import { useBoot } from "../data/boot";
+import { formatBytes } from "../files/kind";
+import { rememberReturn } from "../lib/afterSignIn";
+import { installerPlatform } from "./bridge";
+import { PLATFORMS, desktopKey } from "./InstallersPage";
 import s from "../notifications/notifications.module.scss";
 
 export function DownloadPage() {
-  const info = useQuery({ queryKey: ["desktop"], queryFn: () => api<DesktopInfoDto>("/desktop") });
+  const boot = useBoot();
+  const info = useQuery({ queryKey: desktopKey, queryFn: () => api<DesktopInfoDto>("/desktop"), enabled: !!boot.data });
+
+  if (boot.error && isUnauthorized(boot.error)) {
+    rememberReturn("/download"); // после входа вернём сюда
+    return <Navigate to="/signin" replace />;
+  }
+
   const d = info.data;
-  const none = d && !d.macUrl && !d.winUrl;
+  const mine = installerPlatform();
+  // Своя система — первой.
+  const available = PLATFORMS.filter((x) => d?.[x.id]).sort((a, b) => Number(b.id === mine) - Number(a.id === mine));
+  const admin = !!boot.data && isAdminRole(boot.data.me.role);
   return (
     <main className={s.standalone}>
       <div className={s.card}>
         <img className={s.logo} src="/favicon.svg" alt="" />
-        <h1>Приложение для компьютера{d?.version ? ` ${d.version}` : ""}</h1>
+        <h1>Приложение для компьютера</h1>
         <p>То же, что в браузере, плюс значок с непрочитанным, системные уведомления и работа из трея. Сам чат обновляется без переустановки.</p>
-        {info.isPending && <p>Загружаем ссылки…</p>}
-        {none && <p>Сборки пока не выложены. Спросите администратора или пользуйтесь браузерной версией.</p>}
+        {(boot.isPending || info.isPending) && !boot.error && <p>Загружаем ссылки…</p>}
+        {(boot.error || info.error) && <p role="alert">Не удалось загрузить ссылки. Обновите страницу.</p>}
+        {d && available.length === 0 && (
+          <p>
+            Установщики ещё не загружены.{" "}
+            {admin ? <Link to="/admin/desktop">Загрузить</Link> : "Их добавляет администратор чата, а пока можно пользоваться браузерной версией."}
+          </p>
+        )}
         <div className={s.downloads}>
-          {d?.macUrl && (
-            <a className={s.download} href={d.macUrl}>
-              <Apple /> Скачать для macOS
-            </a>
-          )}
-          {d?.winUrl && (
-            <a className={s.download} href={d.winUrl}>
-              <Monitor /> Скачать для Windows
-            </a>
-          )}
+          {available.map(({ id, label, icon }) => {
+            const it = d![id]!;
+            return (
+              <a key={id} className={s.download} href={it.url} download>
+                {icon} Скачать для {label}
+                <span className={s.downloadMeta}>
+                  {it.version} · {formatBytes(it.size)}
+                </span>
+              </a>
+            );
+          })}
         </div>
         <p>Сборки не подписаны, поэтому система предупредит при первом запуске:</p>
         <ol className={s.steps}>

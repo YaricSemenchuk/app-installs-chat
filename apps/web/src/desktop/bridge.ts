@@ -1,4 +1,5 @@
 // Мост к десктоп-оболочке (apps/desktop/src/preload.ts). В браузере его нет — всё работает и без него.
+import type { DesktopPlatform } from "@teamchat/shared";
 export type DesktopLink = { type: "open"; path: string } | { type: "auth"; code: string; verifier: string };
 
 export type DesktopBridge = {
@@ -12,6 +13,14 @@ export type DesktopBridge = {
 };
 
 export const desktop: DesktopBridge | undefined = (window as unknown as { desktop?: DesktopBridge }).desktop;
+
+// Для какой системы установщик: в оболочке — её платформа, в браузере — по userAgent.
+export function installerPlatform(): DesktopPlatform | null {
+  const p = desktop?.platform;
+  if (p) return p === "darwin" ? "mac" : p === "win32" ? "win" : null;
+  const ua = navigator.userAgent;
+  return /Mac OS X|Macintosh/.test(ua) && !/iPhone|iPad/.test(ua) ? "mac" : /Windows/.test(ua) ? "win" : null;
+}
 
 // Новее ли версия a, чем b (1.10.0 > 1.9.3).
 export function isNewer(a: string, b: string): boolean {

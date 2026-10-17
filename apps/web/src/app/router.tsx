@@ -1,11 +1,14 @@
+import { useEffect } from "react";
 import { createBrowserRouter, Navigate } from "react-router";
 import { Bookmark, MessageSquareText, SearchX, SendHorizontal } from "lucide-react";
 import { DirectoryPage } from "../channels/DirectoryPage";
 import { DesignPage } from "../design/DesignPage";
 import { DesktopAuthPage } from "../desktop/DesktopAuthPage";
 import { DownloadPage } from "../desktop/DownloadPage";
+import { InstallersPage } from "../desktop/InstallersPage";
 import { MessageRedirect } from "../desktop/MessageRedirect";
 import { useBoot } from "../data/boot";
+import { clearReturn, pendingReturn } from "../lib/afterSignIn";
 import { FilesPage } from "../files/FilesPage";
 import { ConversationPage } from "../pages/ConversationPage";
 import { InvitePage } from "../pages/InvitePage";
@@ -16,8 +19,14 @@ import { PeoplePage } from "../people/PeoplePage";
 import { SearchPage } from "../search/SearchPage";
 import { AppShell } from "./AppShell";
 
+// Главная: туда, откуда отправили на вход (например, /download), иначе в #general.
 function OpenDefaultConversation() {
   const boot = useBoot().data;
+  const back = pendingReturn();
+  useEffect(() => {
+    if (back) clearReturn();
+  }, [back]);
+  if (back) return <Navigate to={back} replace />;
   const general = boot?.conversations.find((c) => c.isGeneral) ?? boot?.conversations[0];
   return general ? <Navigate to={`/c/${general.id}`} replace /> : null;
 }
@@ -39,6 +48,7 @@ export const router = createBrowserRouter([
       { path: "c/:conversationId", element: <ConversationPage /> },
       { path: "m/:messageId", element: <MessageRedirect /> },
       { path: "admin/people", element: <PeoplePage /> },
+      { path: "admin/desktop", element: <InstallersPage /> },
       { path: "browse", element: <DirectoryPage /> },
       { path: "threads", element: <StubPage icon={<MessageSquareText />} title="Треды" text={later} /> },
       { path: "drafts", element: <StubPage icon={<SendHorizontal />} title="Черновики и отправленные" text={later} /> },

@@ -5,7 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { BellRing, Download, X } from "lucide-react";
 import type { DesktopInfoDto, PreferencesDto } from "@teamchat/shared";
 import { api } from "../api/http";
-import { desktop, isNewer } from "../desktop/bridge";
+import { desktop, installerPlatform, isNewer } from "../desktop/bridge";
+import { desktopKey } from "../desktop/InstallersPage";
 import { Button } from "../ui/Button";
 import { IconButton } from "../ui/IconButton";
 import { askPermission, browserPermission } from "./notify";
@@ -47,9 +48,11 @@ export function NotifyBanner({ prefs }: { prefs: PreferencesDto }) {
 }
 
 export function UpdateBanner() {
-  const info = useQuery({ queryKey: ["desktop"], queryFn: () => api<DesktopInfoDto>("/desktop"), enabled: !!desktop, staleTime: 3600_000 });
+  // Раз в час: администратор мог загрузить новую сборку, пока приложение открыто.
+  const info = useQuery({ queryKey: desktopKey, queryFn: () => api<DesktopInfoDto>("/desktop"), enabled: !!desktop, staleTime: 3600_000, refetchInterval: 3600_000 });
   const [hidden, setHidden] = useState(false);
-  const latest = info.data?.version;
+  const platform = installerPlatform();
+  const latest = platform ? info.data?.[platform]?.version : undefined;
   if (!desktop || hidden || !latest || !isNewer(latest, desktop.version)) return null;
   return (
     <div className={s.banner} role="region" aria-label="Обновление">

@@ -139,3 +139,9 @@
     background: var(--color-accent-hover);
   }
 }
+
+// Версия и размер — тише названия кнопки.
+.downloadMeta {
+  font-weight: 400;
+  opacity: 0.8;
+}
