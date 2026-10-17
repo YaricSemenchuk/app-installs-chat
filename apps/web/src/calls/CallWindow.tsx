@@ -27,6 +27,10 @@ import s from "./calls.module.scss";
 
 const deviceName = (kind?: MediaDeviceKind) => (kind === "videoinput" ? "камере" : kind === "audioinput" ? "микрофону" : "устройству");
 const deviceError = (kind?: MediaDeviceKind) => `Нет доступа к ${deviceName(kind)}. Разрешите его в настройках браузера или системы`;
+// Нет доступа к камере или микрофону — это уже показал onMediaDeviceFailure, звонок при этом идёт.
+const isDeviceError = (err: Error) =>
+  ["NotAllowedError", "NotFoundError", "NotReadableError", "OverconstrainedError", "SecurityError"].includes(err.name) ||
+  /permission|getUserMedia|device/i.test(err.message);
 // Ошибки LiveKit — технические и по-английски; человеку важно одно: не подключились.
 const connectError = (err: Error) =>
   /signal connection|failed to fetch|network|websocket|timeout/i.test(err.message)
@@ -69,7 +73,7 @@ function CallRoom({ session }: { session: Session }) {
         options={{ adaptiveStream: true, dynacast: true }}
         onDisconnected={() => void leaveCall()}
         onMediaDeviceFailure={(_failure, kind) => toast(deviceError(kind), "error")}
-        onError={(err) => toast(connectError(err), "error")}
+        onError={(err) => !isDeviceError(err) && toast(connectError(err), "error")}
         className={s.room}
       >
         <RoomAudioRenderer />
