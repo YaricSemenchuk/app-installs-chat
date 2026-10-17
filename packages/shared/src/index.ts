@@ -60,6 +60,62 @@ export type ThreadSubscriptionInput = z.infer<typeof ThreadSubscriptionInput>;
 
 export const THREAD_SUMMARY_USERS = 5;
 
+// ───────────── уведомления и десктоп ─────────────
+
+export type NotifyLevel = "all" | "mentions" | "nothing";
+
+export type PreferencesDto = {
+  notifyLevel: NotifyLevel; // всё / ЛС, упоминания и треды / ничего
+  desktopNotifications: boolean; // показывать системные уведомления на этом аккаунте
+  notifyThreadReplies: boolean; // ответы в тредах, за которыми слежу
+  showMessagePreview: boolean; // текст сообщения в уведомлении
+  sound: boolean;
+};
+
+export const DEFAULT_PREFERENCES: PreferencesDto = {
+  notifyLevel: "mentions",
+  desktopNotifications: true,
+  notifyThreadReplies: true,
+  showMessagePreview: true,
+  sound: true,
+};
+
+export const UpdatePreferencesInput = z
+  .object({
+    notifyLevel: z.enum(["all", "mentions", "nothing"]),
+    desktopNotifications: z.boolean(),
+    notifyThreadReplies: z.boolean(),
+    showMessagePreview: z.boolean(),
+    sound: z.boolean(),
+  })
+  .partial();
+export type UpdatePreferencesInput = z.infer<typeof UpdatePreferencesInput>;
+
+// Сервер уже решил, что этого человека стоит уведомить; клиент лишь проверяет, не смотрит ли он сейчас на этот разговор.
+export type NotificationDto = {
+  messageId: string;
+  conversationId: string;
+  parentId: string | null;
+  authorId: string;
+  reason: "dm" | "mention" | "thread_reply" | "message";
+  title: string;
+  body: string;
+  sound: boolean;
+};
+export const NOTIFICATION_EVENT = "notification";
+
+const B64URL_43 = /^[A-Za-z0-9_-]{43}$/;
+export const DesktopExchangeInput = z.object({
+  code: z.string().regex(/^[A-Za-z0-9_-]{20,100}$/),
+  verifier: z.string().regex(B64URL_43, "Некорректный verifier"),
+});
+export type DesktopExchangeInput = z.infer<typeof DesktopExchangeInput>;
+export const isDesktopChallenge = (v: unknown): v is string => typeof v === "string" && B64URL_43.test(v);
+
+// Десктоп-приложение: последняя версия и где её скачать (страница /download).
+export type DesktopInfoDto = { version: string | null; macUrl: string | null; winUrl: string | null };
+export const DESKTOP_PROTOCOL = "teamchat";
+
 // ───────────── файлы и поиск ─────────────
 
 export const CreateFileInput = z.object({
@@ -393,6 +449,7 @@ export type BootDto = {
   users: UserDto[];
   conversations: ConversationDto[];
   presence: Record<string, Presence>; // только «в сети»; кого нет — тот away
+  preferences: PreferencesDto;
   lastEventId: number;
 };
 
@@ -415,7 +472,8 @@ export type EventDto =
   | { id: number; kind: "user.updated"; payload: UserDto }
   | { id: number; kind: "member.joined"; conversationId: string; payload: { conversationId: string; userId: string } }
   | { id: number; kind: "member.left"; conversationId: string; payload: { conversationId: string; userId: string } }
-  | { id: number; kind: "conversation.updated"; conversationId: string; payload: ConversationInfoDto };
+  | { id: number; kind: "conversation.updated"; conversationId: string; payload: ConversationInfoDto }
+  | { id: number; kind: "preferences.updated"; userId: string; payload: PreferencesDto };
 
 export type EventKind = EventDto["kind"];
 
