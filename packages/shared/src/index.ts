@@ -148,7 +148,10 @@ export type AuthProvidersDto = { google: boolean };
 
 export type ConversationKind = "public" | "private" | "dm" | "group_dm";
 
-export type ConversationDto = {
+export const isChannelKind = (k: ConversationKind) => k === "public" || k === "private";
+
+// То, что видят все участники; рассылается событием conversation.updated.
+export type ConversationInfoDto = {
   id: string;
   kind: ConversationKind;
   name: string | null;
@@ -156,12 +159,22 @@ export type ConversationDto = {
   purpose: string;
   isGeneral: boolean;
   archived: boolean;
+  createdBy: string;
+  createdAt: string;
+};
+
+export type ConversationDto = ConversationInfoDto & {
   memberIds: string[];
   // состояние текущего пользователя
+  isMember: boolean;
+  isManager: boolean;
   lastReadSeq: number;
   latestSeq: number;
   unreadCount: number;
+  mentionCount: number;
 };
+
+export type DirectoryChannelDto = ConversationInfoDto & { memberCount: number; isMember: boolean };
 
 export type MessageDto = {
   id: string;
@@ -171,9 +184,80 @@ export type MessageDto = {
   clientMsgId: string | null;
   subtype: string | null;
   text: string;
+  mentions: string[]; // кого задело: @человек, а также раскрытые @here / @channel
   createdAt: string;
   editedAt: string | null;
 };
+
+// ───────────── каналы, ЛС, упоминания ─────────────
+
+export const CHANNEL_NAME_MAX = 80;
+export const CHANNEL_NAME_RE = /^[a-z0-9_-]{1,80}$/;
+export const DM_MAX_OTHERS = 8;
+
+const translit: Record<string, string> = {
+  а: "a", б: "b", в: "v", г: "g", ґ: "g", д: "d", е: "e", ё: "e", є: "ie", ж: "zh", з: "z", и: "i", і: "i", ї: "i",
+  й: "i", к: "k", л: "l", м: "m", н: "n", о: "o", п: "p", р: "r", с: "s", т: "t", у: "u", ф: "f", х: "kh", ц: "ts",
+  ч: "ch", ш: "sh", щ: "shch", ъ: "", ы: "y", ь: "", э: "e", ю: "iu", я: "ia",
+};
+
+// Имя канала из того, что человек напечатал: строчные латинские буквы, цифры, «-» и «_»;
+// кириллица транслитерируется, пробелы и прочее становятся дефисом.
+export function normalizeChannelName(raw: string): string {
+  return [...raw.toLowerCase()]
+    .map((ch) => translit[ch] ?? ch)
+    .join("")
+    .replace(/[\s.]+/g, "-")
+    .replace(/[^a-z0-9_-]/g, "")
+    .replace(/-{2,}/g, "-")
+    .slice(0, CHANNEL_NAME_MAX);
+}
+
+export const CreateChannelInput = z.object({
+  name: z.string().regex(CHANNEL_NAME_RE, "Только строчные латинские буквы, цифры, «-» и «_», до 80 символов"),
+  kind: z.enum(["public", "private"]).default("public"),
+  purpose: z.string().trim().max(250).default(""),
+  memberIds: z.array(z.uuid()).max(100).default([]),
+});
+export type CreateChannelInput = z.infer<typeof CreateChannelInput>;
+
+export const UpdateConversationInput = z.object({
+  name: z.string().regex(CHANNEL_NAME_RE, "Только строчные латинские буквы, цифры, «-» и «_», до 80 символов").optional(),
+  topic: z.string().trim().max(250).optional(),
+  purpose: z.string().trim().max(250).optional(),
+});
+export type UpdateConversationInput = z.infer<typeof UpdateConversationInput>;
+
+export const OpenDmInput = z.object({
+  userIds: z.array(z.uuid()).max(DM_MAX_OTHERS, `В личной переписке не больше ${DM_MAX_OTHERS + 1} человек`),
+});
+export type OpenDmInput = z.infer<typeof OpenDmInput>;
+
+export const AddMembersInput = z.object({ userIds: z.array(z.uuid()).min(1).max(100) });
+export type AddMembersInput = z.infer<typeof AddMembersInput>;
+
+export const BrowseQuery = z.object({ query: z.string().trim().max(80).optional() });
+export type BrowseQuery = z.infer<typeof BrowseQuery>;
+
+// Упоминания в тексте хранятся токенами с id, а не именами: переименования ничего не ломают.
+export const mentionToken = {
+  user: (id: string) => `<@${id}>`,
+  here: "<!here>",
+  channel: "<!channel>",
+  everyone: "<!everyone>",
+} as const;
+
+export const MENTION_TOKEN_RE = /<@([0-9a-f-]{36})>|<!(here|channel|everyone)>/g;
+
+export function extractMentions(text: string): { userIds: string[]; broadcast: Array<"here" | "channel" | "everyone"> } {
+  const userIds = new Set<string>();
+  const broadcast = new Set<"here" | "channel" | "everyone">();
+  for (const m of text.matchAll(MENTION_TOKEN_RE)) {
+    if (m[1]) userIds.add(m[1]);
+    else if (m[2]) broadcast.add(m[2] as "here" | "channel" | "everyone");
+  }
+  return { userIds: [...userIds], broadcast: [...broadcast] };
+}
 
 export type WorkspaceDto = { name: string; whoCanInvite: "everyone" | "admins" };
 
@@ -199,7 +283,8 @@ export type EventDto =
   | { id: number; kind: "user.created"; payload: UserDto }
   | { id: number; kind: "user.updated"; payload: UserDto }
   | { id: number; kind: "member.joined"; conversationId: string; payload: { conversationId: string; userId: string } }
-  | { id: number; kind: "member.left"; conversationId: string; payload: { conversationId: string; userId: string } };
+  | { id: number; kind: "member.left"; conversationId: string; payload: { conversationId: string; userId: string } }
+  | { id: number; kind: "conversation.updated"; conversationId: string; payload: ConversationInfoDto };
 
 export type EventKind = EventDto["kind"];
 

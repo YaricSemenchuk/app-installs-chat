@@ -7,6 +7,7 @@ import { SessionGuard } from "./auth/session.guard.js";
 import { BootstrapService } from "./bootstrap.service.js";
 import { ConversationsController } from "./conversations/conversations.controller.js";
 import { ConversationsService } from "./conversations/conversations.service.js";
+import { MessagesService } from "./conversations/messages.service.js";
 import { MembershipService } from "./conversations/membership.service.js";
 import { PrismaService } from "./db/prisma.service.js";
 import { HealthController } from "./health.controller.js";
@@ -34,6 +35,7 @@ import { UsersService } from "./users/users.service.js";
     MembershipService,
     InvitesService,
     ConversationsService,
+    MessagesService,
     UsersService,
     BootstrapService,
   ],

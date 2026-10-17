@@ -1,6 +1,15 @@
 // Строки БД (snake_case, BigInt, Date) → DTO контракта из @teamchat/shared.
-import type { AdminUserDto, EventDto, InviteDto, MessageDto, Role, UserDto } from "@teamchat/shared";
-import type { events, invites, messages, users } from "../generated/prisma/client.js";
+import type {
+  AdminUserDto,
+  ConversationInfoDto,
+  ConversationKind,
+  EventDto,
+  InviteDto,
+  MessageDto,
+  Role,
+  UserDto,
+} from "@teamchat/shared";
+import type { conversations, events, invites, messages, users } from "../generated/prisma/client.js";
 
 export function toUserDto(u: users): UserDto {
   return {
@@ -37,7 +46,7 @@ export function toInviteDto(i: invites): InviteDto {
   };
 }
 
-export function toMessageDto(m: messages): MessageDto {
+export function toMessageDto(m: messages, mentions: string[] = []): MessageDto {
   return {
     id: m.id,
     seq: Number(m.seq),
@@ -46,8 +55,23 @@ export function toMessageDto(m: messages): MessageDto {
     clientMsgId: m.client_msg_id,
     subtype: m.subtype,
     text: m.deleted_at ? "" : m.text,
+    mentions,
     createdAt: m.created_at.toISOString(),
     editedAt: m.edited_at?.toISOString() ?? null,
+  };
+}
+
+export function toConversationInfoDto(c: conversations): ConversationInfoDto {
+  return {
+    id: c.id,
+    kind: c.kind as ConversationKind,
+    name: c.name,
+    topic: c.topic,
+    purpose: c.purpose,
+    isGeneral: c.is_general,
+    archived: c.archived_at !== null,
+    createdBy: c.created_by,
+    createdAt: c.created_at.toISOString(),
   };
 }
 

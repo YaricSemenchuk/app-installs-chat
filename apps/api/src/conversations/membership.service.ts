@@ -98,6 +98,18 @@ export class MembershipService {
     ];
   }
 
+  // Выход (сам или удалили): системное сообщение «вышел(а) из канала», потом member.left. Вызывать под lock().
+  async leave(tx: Tx, conversationId: string, userId: string): Promise<EventDto[]> {
+    const msg = await tx.messages.create({ data: { conversation_id: conversationId, user_id: userId, subtype: "leave" } });
+    await tx.conversation_members.delete({
+      where: { conversation_id_user_id: { conversation_id: conversationId, user_id: userId } },
+    });
+    return [
+      await this.events.append(tx, "message.created", { conversationId }, toMessageDto(msg)),
+      await this.events.append(tx, "member.left", { conversationId }, { conversationId, userId }),
+    ];
+  }
+
   // Выход из всех каналов (при деактивации). ЛС не трогаем: переписка остаётся у собеседника. Вызывать под lock().
   async leaveAllChannels(tx: Tx, userId: string): Promise<EventDto[]> {
     const memberships = await tx.conversation_members.findMany({
