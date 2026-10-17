@@ -8,3 +8,5 @@ apps/api/src/generated
 **/.dev-mail.log
 replica
 .claude
+**/.storage
+**/.storage-test

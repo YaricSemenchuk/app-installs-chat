@@ -27,6 +27,9 @@ npm run dev
 можно с адресов из `ALLOWED_EMAIL_DOMAINS`. Без `RESEND_API_KEY` письма не уходят наружу, а пишутся
 в `apps/api/.dev-mail.log` — код входа берите оттуда.
 
+Файлы локально лежат в `apps/api/.storage` (драйвер `disk`, по умолчанию). Чтобы проверить работу с бакетом,
+задайте `STORAGE_DRIVER=s3` и переменные `BUCKET_*`, как на Railway.
+
 Проверки:
 
 ```bash
@@ -55,11 +58,13 @@ Google на 3299 — dev-сервер для них не нужен. Тольк�
 
 ## Railway
 
-Один сервис из `Dockerfile` + Postgres. Миграции применяются при старте, healthcheck — `/healthz`.
+Один сервис из `Dockerfile` + Postgres + Bucket. Миграции применяются при старте, healthcheck — `/healthz`.
 
 1. New Project → Deploy from GitHub repo (или `railway up` из корня).
 2. Add → Database → PostgreSQL.
-3. Переменные сервиса:
+3. Add → Bucket (для файлов: диск контейнера стирается при каждом деплое, поэтому в production без бакета
+   сервис не стартует).
+4. Переменные сервиса:
 
 | переменная | значение |
 | --- | --- |
@@ -73,5 +78,10 @@ Google на 3299 — dev-сервер для них не нужен. Тольк�
 | `RESEND_API_KEY` | ключ Resend (обязателен в production) |
 | `EMAIL_FROM` | отправитель, домен подтверждён в Resend |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | необязательно: вход через Google |
+| `STORAGE_DRIVER` | `s3` |
+| `BUCKET_ENDPOINT`, `BUCKET_NAME`, `BUCKET_ACCESS_KEY_ID`, `BUCKET_SECRET_ACCESS_KEY` | из учётных данных бакета (вкладка Credentials); удобнее сослаться на переменные бакета через `${{…}}` |
+| `BUCKET_REGION` | регион из учётных данных, по умолчанию `auto` |
+| `BUCKET_FORCE_PATH_STYLE` | `true`, если хранилище не поддерживает адреса вида `bucket.host` |
 
-`PORT` Railway задаёт сам.
+`PORT` Railway задаёт сам. Файлы загружаются через API потоком (CORS у бакета настраивать не нужно), а
+скачиваются по подписанной ссылке на 5 минут после проверки доступа.

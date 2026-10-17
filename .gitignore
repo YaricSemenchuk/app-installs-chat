@@ -8,3 +8,5 @@ dist/
 apps/web/src/styles/tokens.css
 .dev-mail.log
 apps/api/src/generated/
+.storage/
+.storage-test/

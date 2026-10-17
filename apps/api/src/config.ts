@@ -34,6 +34,18 @@ const Env = z.object({
   // Переопределяются только в e2e-тестах, чтобы не ходить в настоящий Google.
   GOOGLE_AUTH_URL: z.url().default("https://accounts.google.com/o/oauth2/v2/auth"),
   GOOGLE_TOKEN_URL: z.url().default("https://oauth2.googleapis.com/token"),
+  // Файлы: S3-совместимый бакет (Railway Buckets) или каталог на диске — для разработки и e2e.
+  STORAGE_DRIVER: z.enum(["s3", "disk"]).default("disk"),
+  STORAGE_DIR: z.string().default(".storage"),
+  BUCKET_ENDPOINT: z.url().optional(),
+  BUCKET_REGION: z.string().default("auto"),
+  BUCKET_NAME: z.string().optional(),
+  BUCKET_ACCESS_KEY_ID: z.string().optional(),
+  BUCKET_SECRET_ACCESS_KEY: z.string().optional(),
+  BUCKET_FORCE_PATH_STYLE: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((v) => v === "true"),
 });
 
 export type Config = z.infer<typeof Env>;
@@ -47,6 +59,20 @@ function load(): Config {
   if (parsed.data.NODE_ENV === "production" && !parsed.data.RESEND_API_KEY) {
     console.error("env RESEND_API_KEY: обязателен в production, иначе коды входа не дойдут");
     process.exit(1);
+  }
+  // Диск контейнера на Railway стирается при каждом деплое: в production файлы только в бакете.
+  if (parsed.data.NODE_ENV === "production" && parsed.data.STORAGE_DRIVER !== "s3") {
+    console.error("env STORAGE_DRIVER: в production нужен s3 (Railway Bucket), диск контейнера не переживает деплой");
+    process.exit(1);
+  }
+  if (parsed.data.STORAGE_DRIVER === "s3") {
+    const missing = (["BUCKET_ENDPOINT", "BUCKET_NAME", "BUCKET_ACCESS_KEY_ID", "BUCKET_SECRET_ACCESS_KEY"] as const).filter(
+      (k) => !parsed.data[k],
+    );
+    if (missing.length > 0) {
+      console.error(`env ${missing.join(", ")}: нужны для STORAGE_DRIVER=s3`);
+      process.exit(1);
+    }
   }
   return parsed.data;
 }

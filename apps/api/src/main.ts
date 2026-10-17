@@ -11,6 +11,8 @@ import { AppModule } from "./app.module.js";
 import { config, isProd } from "./config.js";
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+// Байты файла приходят как есть. Это PUT: кросс-сайтом без CORS-preflight браузер его не отправит.
+const RAW_UPLOAD = /^\/api\/files\/[0-9a-f-]{36}\/content$/;
 
 // Изменяющие запросы принимаем только как JSON: обычная HTML-форма с чужого сайта так не отправит.
 // POST — всегда JSON (форма умеет только GET/POST); DELETE/PUT/PATCH без тела браузер кросс-сайтом
@@ -18,7 +20,8 @@ const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 function jsonOnlyMutations(req: Request, res: Response, next: NextFunction): void {
   const hasBody = Number(req.headers["content-length"] ?? 0) > 0 || req.headers["transfer-encoding"] !== undefined;
   const needsJson = req.method === "POST" || hasBody;
-  if (req.path.startsWith("/api/") && !SAFE_METHODS.has(req.method) && needsJson && !req.is("application/json")) {
+  const rawUpload = req.method === "PUT" && RAW_UPLOAD.test(req.path);
+  if (req.path.startsWith("/api/") && !SAFE_METHODS.has(req.method) && needsJson && !rawUpload && !req.is("application/json")) {
     res.status(415).json({ statusCode: 415, message: "Нужен Content-Type: application/json" });
     return;
   }

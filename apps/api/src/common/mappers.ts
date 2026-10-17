@@ -4,13 +4,14 @@ import type {
   ConversationInfoDto,
   ConversationKind,
   EventDto,
+  FileDto,
   InviteDto,
   MessageDto,
   ReactionDto,
   Role,
   UserDto,
 } from "@teamchat/shared";
-import type { conversations, events, invites, messages, users } from "../generated/prisma/client.js";
+import type { conversations, events, files, invites, messages, users } from "../generated/prisma/client.js";
 
 export function toUserDto(u: users): UserDto {
   return {
@@ -48,6 +49,28 @@ export function toInviteDto(i: invites): InviteDto {
 }
 
 type ReactionRow = { emoji: string; user_id: string; created_at: Date };
+export type FileRow = Pick<
+  files,
+  "id" | "name" | "mimetype" | "size_bytes" | "uploader_id" | "created_at" | "status" | "width" | "height" | "thumbnails" | "deleted_at"
+>;
+
+export function toFileDto(f: FileRow): FileDto {
+  const thumbs = Object.keys((f.thumbnails ?? {}) as Record<string, string>)
+    .map(Number)
+    .filter((n) => Number.isFinite(n))
+    .sort((a, b) => a - b);
+  return {
+    id: f.id,
+    name: f.name,
+    mimetype: f.mimetype,
+    size: Number(f.size_bytes),
+    uploaderId: f.uploader_id,
+    createdAt: f.created_at.toISOString(),
+    status: f.status === "ready" ? "ready" : "pending",
+    image: f.width && f.height ? { width: f.width, height: f.height, thumbs } : null,
+    deleted: f.deleted_at !== null,
+  };
+}
 
 // Реакции одной кнопкой на эмодзи: эмодзи — в порядке первой реакции, люди — в порядке, как ставили.
 export function groupReactions(rows: ReactionRow[]): ReactionDto[] {
@@ -61,7 +84,11 @@ export function groupReactions(rows: ReactionRow[]): ReactionDto[] {
 }
 
 // Что приходит из базы вместе с сообщением (см. MESSAGE_INCLUDE в messages.service).
-export type MessageRow = messages & { message_mentions?: { user_id: string }[]; reactions?: ReactionRow[] };
+export type MessageRow = messages & {
+  message_mentions?: { user_id: string }[];
+  reactions?: ReactionRow[];
+  message_files?: { position: number; files: FileRow }[];
+};
 
 export function toMessageDto(m: MessageRow, mentions?: string[]): MessageDto {
   const deleted = m.deleted_at !== null;
@@ -83,6 +110,7 @@ export function toMessageDto(m: MessageRow, mentions?: string[]): MessageDto {
     replyUserIds: m.reply_user_ids,
     lastReplyAt: m.last_reply_at?.toISOString() ?? null,
     reactions: deleted ? [] : groupReactions(m.reactions ?? []),
+    files: deleted ? [] : [...(m.message_files ?? [])].sort((a, b) => a.position - b.position).map((mf) => toFileDto(mf.files)),
   };
 }
 
@@ -111,6 +139,7 @@ const MESSAGE_DEFAULTS: Omit<MessageDto, "id" | "seq" | "conversationId" | "user
   replyUserIds: [],
   lastReplyAt: null,
   reactions: [],
+  files: [],
 };
 
 export function toEventDto(e: events): EventDto {

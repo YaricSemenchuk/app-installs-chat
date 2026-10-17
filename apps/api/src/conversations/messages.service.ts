@@ -1,5 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import {
+  MAX_FILES_PER_MESSAGE,
   MAX_REACTIONS_PER_MESSAGE,
   THREAD_SUMMARY_USERS,
   canStillEdit,
@@ -21,13 +22,9 @@ import { EventsService } from "../realtime/events.service.js";
 import { RealtimeHub } from "../realtime/hub.service.js";
 import { PresenceService } from "../realtime/presence.service.js";
 import { assertCanPost, assertMember, isAdmin, isChannel, loadAccess, type Access } from "./access.js";
+import { MESSAGE_INCLUDE } from "./message-include.js";
 
 type MentionKind = "user" | "here" | "channel" | "everyone";
-
-const MESSAGE_INCLUDE = {
-  message_mentions: { select: { user_id: true } },
-  reactions: { select: { emoji: true, user_id: true, created_at: true } },
-} as const;
 
 // Лента: сообщения верхнего уровня и ответы «также в канал»; удалённое — только если у него остались ответы.
 const feedWhere = (conversationId: string) => ({
@@ -137,6 +134,16 @@ export class MessagesService {
       }
     }
     const alsoInChannel = parent !== null && input.alsoInChannel;
+    const fileIds = [...new Set(input.fileIds)].slice(0, MAX_FILES_PER_MESSAGE);
+    if (fileIds.length > 0) {
+      // Приложить можно только свои загруженные файлы, и каждый — один раз.
+      const files = await this.prisma.files.findMany({
+        where: { id: { in: fileIds } },
+        select: { id: true, uploader_id: true, status: true, deleted_at: true, _count: { select: { message_files: true } } },
+      });
+      const usable = files.filter((f) => f.uploader_id === me.id && f.status === "ready" && !f.deleted_at && f._count.message_files === 0);
+      if (usable.length !== fileIds.length) throw new BadRequestException("Какой-то файл ещё не загрузился или уже отправлен");
+    }
     const inFeed = parent === null || alsoInChannel;
     const mentions = await this.recipients(me, access.conv, text);
     const isDm = !isChannel(access.conv);
@@ -158,7 +165,9 @@ export class MessagesService {
           text,
           parent_id: parent?.id ?? null,
           also_in_channel: alsoInChannel,
+          message_files: { create: fileIds.map((file_id, position) => ({ file_id, position })) },
         },
+        include: MESSAGE_INCLUDE,
       });
       if (mentions.size > 0) {
         await tx.message_mentions.createMany({
@@ -239,6 +248,7 @@ export class MessagesService {
     }
     const next = text.trim();
     if (next === msg.text) return toMessageDto(msg);
+    if (!next && msg.message_files.length === 0) throw new BadRequestException("Пустое сообщение");
     const mentions = await this.recipients(me, access.conv, next);
 
     const { message, event } = await this.prisma.$transaction(async (tx) => {

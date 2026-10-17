@@ -1,7 +1,7 @@
 // e2e: свежая база teamchat_test, свой экземпляр API на отдельном порту, mock Google, node --test.
 // Запуск: npm run test:e2e (из корня или apps/api). Нужен Postgres из DATABASE_URL в apps/api/.env.
 import { execFileSync, spawn } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 import pg from "pg";
 
@@ -38,7 +38,11 @@ const env = {
   GOOGLE_CLIENT_SECRET: "e2e-client-secret",
   GOOGLE_AUTH_URL: `http://localhost:${GOOGLE_PORT}/auth`,
   GOOGLE_TOKEN_URL: `http://localhost:${GOOGLE_PORT}/token`,
+  // Файлы e2e кладут на диск в отдельный каталог, он пересоздаётся при каждом запуске.
+  STORAGE_DRIVER: "disk",
+  STORAGE_DIR: resolve(root, ".storage-test"),
 };
+rmSync(env.STORAGE_DIR, { recursive: true, force: true });
 
 execFileSync("npx", ["prisma", "migrate", "deploy"], { cwd: root, env, stdio: "ignore" });
 
