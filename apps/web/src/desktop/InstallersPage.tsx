@@ -2,7 +2,7 @@
 import { useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Apple, Monitor, ShieldAlert, Trash2, Upload } from "lucide-react";
+import { Apple, Laptop, Monitor, ShieldAlert, Trash2, Upload } from "lucide-react";
 import {
   DesktopVersion,
   INSTALLER_EXT,
@@ -30,6 +30,7 @@ export const desktopKey = ["desktop"] as const;
 export const PLATFORMS: { id: DesktopPlatform; label: string; icon: ReactNode }[] = [
   { id: "mac", label: "macOS", icon: <Apple /> },
   { id: "win", label: "Windows", icon: <Monitor /> },
+  { id: "linux", label: "Ubuntu", icon: <Laptop /> },
 ];
 const labelOf = (id: DesktopPlatform) => PLATFORMS.find((x) => x.id === id)!.label;
 const dateFmt = new Intl.DateTimeFormat("ru", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
@@ -151,7 +152,7 @@ export function InstallersPage() {
         <ol className={s.steps}>
           <li>Поднимите version в apps/desktop/package.json.</li>
           <li>Соберите установщики с адресом этого чата: команды — в README, раздел «Десктоп».</li>
-          <li>Загрузите .dmg и .exe сюда. У кого стоит старая версия, приложение предложит обновиться.</li>
+          <li>Загрузите .dmg, .exe и .deb сюда. У кого стоит старая версия, приложение предложит обновиться.</li>
         </ol>
       </section>
 

@@ -17,9 +17,11 @@ export const desktop: DesktopBridge | undefined = (window as unknown as { deskto
 // Для какой системы установщик: в оболочке — её платформа, в браузере — по userAgent.
 export function installerPlatform(): DesktopPlatform | null {
   const p = desktop?.platform;
-  if (p) return p === "darwin" ? "mac" : p === "win32" ? "win" : null;
+  if (p) return p === "darwin" ? "mac" : p === "win32" ? "win" : "linux";
   const ua = navigator.userAgent;
-  return /Mac OS X|Macintosh/.test(ua) && !/iPhone|iPad/.test(ua) ? "mac" : /Windows/.test(ua) ? "win" : null;
+  if (/Mac OS X|Macintosh/.test(ua) && !/iPhone|iPad/.test(ua)) return "mac";
+  if (/Windows/.test(ua)) return "win";
+  return /Linux/.test(ua) && !/Android/.test(ua) ? "linux" : null;
 }
 
 // Новее ли версия a, чем b (1.10.0 > 1.9.3).
