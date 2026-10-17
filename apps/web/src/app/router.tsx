@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from "react-router";
 import { Bookmark, FileStack, MessageSquareText, SearchX, SendHorizontal } from "lucide-react";
+import { DirectoryPage } from "../channels/DirectoryPage";
 import { DesignPage } from "../design/DesignPage";
 import { useBoot } from "../data/boot";
 import { ConversationPage } from "../pages/ConversationPage";
@@ -30,6 +31,7 @@ export const router = createBrowserRouter([
       { index: true, element: <OpenDefaultConversation /> },
       { path: "c/:conversationId", element: <ConversationPage /> },
       { path: "admin/people", element: <PeoplePage /> },
+      { path: "browse", element: <DirectoryPage /> },
       { path: "threads", element: <StubPage icon={<MessageSquareText />} title="Треды" text={later} /> },
       { path: "drafts", element: <StubPage icon={<SendHorizontal />} title="Черновики и отправленные" text={later} /> },
       { path: "saved", element: <StubPage icon={<Bookmark />} title="Сохранённое" text={later} /> },

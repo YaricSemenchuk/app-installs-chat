@@ -25,10 +25,12 @@ export function Dialog({ trigger, open, onOpenChange, title, description, size =
         <D.Content
           className={cx(s.surface, s.floating, s[size])}
           // Фокус — на поле с autoFocus, иначе на саму модалку, а не на «Закрыть»: так не всплывает его подсказка.
+          // Поле ищем явно: если модалку открыло меню, его ловушка фокуса успевает отобрать фокус у autoFocus.
           onOpenAutoFocus={(e) => {
             e.preventDefault();
             const el = e.currentTarget as HTMLElement;
-            if (!el.contains(document.activeElement)) el.focus();
+            if (el.contains(document.activeElement)) return;
+            (el.querySelector<HTMLElement>("[data-autofocus]") ?? el).focus();
           }}
         >
           <header className={s.header}>

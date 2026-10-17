@@ -32,21 +32,38 @@ export function Checkbox({
   );
 }
 
+// hint — пояснение под подписью; подпись при этом не меняется от состояния, иначе «выкл.» рядом с «Открытый» читается наоборот.
 export function Switch({
   label,
+  hint,
   checked,
   onCheckedChange,
   disabled,
-}: Base & { checked: boolean; onCheckedChange?: (v: boolean) => void }) {
+}: Base & { hint?: ReactNode; checked: boolean; onCheckedChange?: (v: boolean) => void }) {
   const id = useId();
+  const hintId = `${id}-hint`;
   return (
-    <div className={s.row}>
-      <S.Root id={id} className={s.switch} checked={checked} disabled={disabled} onCheckedChange={onCheckedChange}>
+    <div className={hint ? s.rowTop : s.row}>
+      <S.Root
+        id={id}
+        className={s.switch}
+        checked={checked}
+        disabled={disabled}
+        onCheckedChange={onCheckedChange}
+        aria-describedby={hint ? hintId : undefined}
+      >
         <S.Thumb className={s.thumb} />
       </S.Root>
-      <label htmlFor={id} className={s.label}>
-        {label}
-      </label>
+      <span className={s.text}>
+        <label htmlFor={id} className={s.label}>
+          {label}
+        </label>
+        {hint && (
+          <span id={hintId} className={s.hint}>
+            {hint}
+          </span>
+        )}
+      </span>
     </div>
   );
 }

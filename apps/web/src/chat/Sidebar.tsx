@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import { ChevronDown, Hash, Lock, Pencil, Plus, Users } from "lucide-react";
 import { cx } from "../lib/cx";
@@ -23,7 +23,17 @@ export type ItemState = {
   hover?: boolean;
 };
 
-export function Sidebar({ workspace, menu, children }: { workspace: string; menu?: MenuEntry[]; children: ReactNode }) {
+export function Sidebar({
+  workspace,
+  menu,
+  onCompose,
+  children,
+}: {
+  workspace: string;
+  menu?: MenuEntry[];
+  onCompose?: () => void;
+  children: ReactNode;
+}) {
   const button = (
     <button type="button" className={s.workspaceButton} aria-label={`${workspace}: меню рабочего пространства`}>
       {workspace}
@@ -34,7 +44,7 @@ export function Sidebar({ workspace, menu, children }: { workspace: string; menu
     <nav className={s.sidebar} aria-label="Разговоры">
       <header className={s.workspace}>
         {menu ? <Menu trigger={button} items={menu} align="start" /> : button}
-        <IconButton label="Новое сообщение" shortcut="⌘N" size="xs">
+        <IconButton label="Новое сообщение" shortcut="⌘N" size="xs" onClick={onCompose}>
           <Pencil />
         </IconButton>
       </header>
@@ -43,19 +53,35 @@ export function Sidebar({ workspace, menu, children }: { workspace: string; menu
   );
 }
 
-export function SidebarSection({ title, children }: { title: string; children: ReactNode }) {
+export function SidebarSection({
+  title,
+  addLabel,
+  onAdd,
+  addMenu,
+  children,
+}: {
+  title: string;
+  addLabel?: string;
+  onAdd?: () => void;
+  addMenu?: MenuEntry[];
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(true);
+  const add = (
+    <IconButton label={addLabel ?? `Добавить в «${title}»`} size="xs" className={s.sectionAdd} onClick={onAdd}>
+      <Plus />
+    </IconButton>
+  );
   return (
     <section className={s.section}>
       <div className={s.sectionHeader}>
-        <button type="button" className={s.sectionToggle} aria-expanded="true">
-          <ChevronDown />
+        <button type="button" className={s.sectionToggle} aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+          <ChevronDown className={open ? undefined : s.collapsed} />
           {title}
         </button>
-        <IconButton label={`Добавить в «${title}»`} size="xs" className={s.sectionAdd}>
-          <Plus />
-        </IconButton>
+        {addMenu ? <Menu trigger={add} items={addMenu} align="start" /> : add}
       </div>
-      <ul className={s.list}>{children}</ul>
+      {open && <ul className={s.list}>{children}</ul>}
     </section>
   );
 }

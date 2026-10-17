@@ -1,7 +1,9 @@
 // S31 — карточка человека: имя, должность, присутствие, местное время.
 import type { UserDto } from "@teamchat/shared";
 import { displayOf } from "../data/boot";
+import { MessageCircle } from "lucide-react";
 import { Avatar } from "../ui/Avatar";
+import { Button } from "../ui/Button";
 import s from "./people.module.scss";
 
 const roleText: Partial<Record<UserDto["role"], string>> = {
@@ -19,10 +21,17 @@ function localTime(tz: string): string | null {
   }
 }
 
-export function UserCard({ user, online }: { user: UserDto; online: boolean }) {
+export function UserCard({ user, online, onMessage }: { user: UserDto; online: boolean; onMessage?: () => void }) {
   const time = localTime(user.tz);
   return (
     <div className={s.card}>
+      {onMessage && (
+        <div className={s.cardActions}>
+          <Button size="s" variant="secondary" icon={<MessageCircle />} onClick={onMessage}>
+            Написать
+          </Button>
+        </div>
+      )}
       <Avatar name={displayOf(user)} id={user.id} size="xl" presence={user.deactivated ? undefined : online ? "active" : "away"} deactivated={user.deactivated} />
       <div className={s.cardNames}>
         <h2 className={s.cardName}>{user.realName || user.displayName}</h2>

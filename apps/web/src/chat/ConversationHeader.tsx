@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { BellRing, Hash, Info, Link2, Pin } from "lucide-react";
 import { AvatarStack } from "../ui/Avatar";
 import { IconButton } from "../ui/IconButton";
@@ -7,16 +7,22 @@ import s from "./ConversationHeader.module.scss";
 
 export function ConversationHeader({
   name,
+  icon = <Hash />,
   topic,
   members,
   pins,
   bookmark,
+  onDetails,
+  onMembers,
 }: {
   name: string;
+  icon?: ReactNode;
   topic: string;
-  members: string[];
+  members?: string[];
   pins?: number;
   bookmark?: string;
+  onDetails?: () => void;
+  onMembers?: () => void;
 }) {
   const [tab, setTab] = useState("messages");
   const tabs: TabItem[] = [{ value: "messages", label: "Сообщения" }];
@@ -27,23 +33,36 @@ export function ConversationHeader({
     <header className={s.header}>
       <div className={s.top}>
         <h1 className={s.title}>
-          <Hash />
-          {name}
+          {onDetails ? (
+            <button type="button" className={s.titleButton} onClick={onDetails}>
+              {icon}
+              {name}
+            </button>
+          ) : (
+            <>
+              {icon}
+              {name}
+            </>
+          )}
         </h1>
         <p className={s.topic} title={topic}>
           {topic}
         </p>
         <div className={s.actions}>
-          <button type="button" className={s.members} aria-label={`Участники: ${members.length}`}>
-            <AvatarStack names={members} />
-            <span>{members.length}</span>
-          </button>
-          <IconButton label="Уведомления канала" size="s">
+          {members && (
+            <button type="button" className={s.members} aria-label={`Участники: ${members.length}`} onClick={onMembers}>
+              <AvatarStack names={members} />
+              <span>{members.length}</span>
+            </button>
+          )}
+          <IconButton label="Уведомления" size="s">
             <BellRing />
           </IconButton>
-          <IconButton label="Детали канала" shortcut="⌘⇧I" size="s">
-            <Info />
-          </IconButton>
+          {onDetails && (
+            <IconButton label="Детали" shortcut="⌘⇧I" size="s" onClick={onDetails}>
+              <Info />
+            </IconButton>
+          )}
         </div>
       </div>
       {tabs.length > 1 && <Tabs label="Разделы канала" value={tab} onValueChange={setTab} items={tabs} />}

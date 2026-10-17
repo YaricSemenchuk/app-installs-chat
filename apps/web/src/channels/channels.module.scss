@@ -1,0 +1,277 @@
+@use "../styles/mixins" as *;
+
+// ───── PeoplePicker ─────
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: var(--size-control-xs);
+  padding: 0 var(--space-4) 0 var(--space-4);
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-soft);
+  color: var(--color-text);
+  @include type(body-read);
+}
+
+.chipRemove {
+  display: inline-flex;
+  padding: 2px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--color-surface-hover);
+  }
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.people {
+  max-height: 280px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.person {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  width: 100%;
+  padding: var(--space-8);
+  border: 0;
+  border-radius: var(--radius-chip);
+  background: transparent;
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+  --presence-ring: var(--color-raised);
+  @include type(body-read);
+
+  &:hover:not(:disabled) {
+    background: var(--color-surface-hover);
+    --presence-ring: var(--color-surface-hover);
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.personOn {
+  background: var(--color-accent-soft);
+  --presence-ring: var(--color-accent-soft);
+}
+
+.personText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.check {
+  width: var(--size-icon);
+  height: var(--size-icon);
+  color: var(--color-link);
+}
+
+.muted {
+  color: var(--color-text-muted);
+  @include type(caption);
+}
+
+.hint {
+  padding: var(--space-8);
+  color: var(--color-text-muted);
+  @include type(caption);
+}
+
+// ───── Каталог каналов ─────
+.page {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-24) var(--space-32) var(--space-40);
+
+  @media (max-width: 768px) {
+    padding: var(--space-16);
+  }
+}
+
+.pageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
+  margin-bottom: var(--space-16);
+}
+
+.pageTitle {
+  color: var(--color-text);
+  @include type(heading-s);
+}
+
+.search {
+  max-width: 480px;
+  margin-bottom: var(--space-16);
+}
+
+.dirList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dirRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+  padding: var(--space-12) var(--space-8);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.dirText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dirName {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  color: var(--color-text);
+  @include type(name);
+
+  svg {
+    width: var(--size-icon);
+    height: var(--size-icon);
+    color: var(--color-text-muted);
+  }
+}
+
+.dirMeta {
+  color: var(--color-text-secondary);
+  @include type(body-read);
+  @include truncate;
+}
+
+.tag {
+  padding: 1px var(--space-8);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  @include type(caption);
+}
+
+// ───── Детали канала ─────
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.fieldRow {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-8);
+
+  > :first-child {
+    flex: 1;
+  }
+}
+
+.facts {
+  color: var(--color-text-muted);
+  @include type(caption);
+}
+
+.memberRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-4) 0;
+  --presence-ring: var(--color-raised);
+}
+
+.danger {
+  padding-top: var(--space-12);
+  border-top: 1px solid var(--color-border);
+}
+
+// ───── Быстрый переход ─────
+.switcherList {
+  max-height: 360px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.switcherItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  width: 100%;
+  height: 36px;
+  padding: 0 var(--space-8);
+  border: 0;
+  border-radius: var(--radius-chip);
+  background: transparent;
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+  --presence-ring: var(--color-raised);
+  @include type(body-read);
+
+  &[aria-selected="true"] {
+    background: var(--color-surface-hover);
+    --presence-ring: var(--color-surface-hover);
+  }
+
+  svg {
+    width: var(--size-icon);
+    height: var(--size-icon);
+    color: var(--color-text-muted);
+  }
+}
+
+.switcherLabel {
+  flex: 1;
+  @include truncate;
+}
+
+.unread {
+  font-weight: var(--type-name-weight);
+}
+
+.footerError {
+  margin-right: auto;
+  color: var(--color-danger-text);
+  @include type(body);
+}

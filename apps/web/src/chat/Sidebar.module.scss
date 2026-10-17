@@ -185,3 +185,7 @@
   height: 14px;
   color: var(--color-text-muted);
 }
+
+.collapsed {
+  transform: rotate(-90deg);
+}

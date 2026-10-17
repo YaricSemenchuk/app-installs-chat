@@ -40,20 +40,32 @@ function apply(ev: EventDto) {
     case "message.created": {
       const m = ev.payload;
       useMessages.getState().receive(m);
+      // ЛС, которое собеседник только что открыл, нам ещё не известно — подтягиваем список.
+      if (!getBoot()?.conversations.some((c) => c.id === m.conversationId)) {
+        void queryClient.invalidateQueries({ queryKey: bootKey });
+        break;
+      }
       updateConversation(m.conversationId, (c) => {
         const latestSeq = Math.max(c.latestSeq, m.seq);
         if (m.userId === me) return { ...c, latestSeq, lastReadSeq: Math.max(c.lastReadSeq, m.seq) };
-        // Считаем только то, чего boot ещё не знал: повтор при догрузке не удваивает счётчик.
-        const counts = m.subtype === null && m.seq > c.lastReadSeq && m.seq > c.latestSeq;
-        return { ...c, latestSeq, unreadCount: c.unreadCount + (counts ? 1 : 0) };
+        // Считаем только то, чего boot ещё не знал: повтор при догрузке не удваивает счётчики.
+        const fresh = m.seq > c.lastReadSeq && m.seq > c.latestSeq;
+        const unread = fresh && m.subtype === null ? 1 : 0;
+        const mention = fresh && me !== undefined && m.mentions.includes(me) ? 1 : 0;
+        return { ...c, latestSeq, unreadCount: c.unreadCount + unread, mentionCount: c.mentionCount + mention };
       });
       break;
     }
+    case "conversation.updated":
+      updateConversation(ev.payload.id, (c) => ({ ...c, ...ev.payload }));
+      break;
     case "read.updated": {
       const { conversationId, lastReadSeq } = ev.payload;
-      updateConversation(conversationId, (c) =>
-        lastReadSeq <= c.lastReadSeq ? c : { ...c, lastReadSeq, unreadCount: lastReadSeq >= c.latestSeq ? 0 : c.unreadCount },
-      );
+      updateConversation(conversationId, (c) => {
+        if (lastReadSeq <= c.lastReadSeq) return c;
+        const all = lastReadSeq >= c.latestSeq;
+        return { ...c, lastReadSeq, unreadCount: all ? 0 : c.unreadCount, mentionCount: all ? 0 : c.mentionCount };
+      });
       break;
     }
     case "user.created":

@@ -125,3 +125,65 @@
   color: var(--color-text-muted);
   @include type(caption);
 }
+
+.composer {
+  position: relative;
+}
+
+.tools {
+  align-items: center;
+}
+
+.mentions {
+  position: absolute;
+  bottom: calc(100% + var(--space-4));
+  left: 0;
+  width: min(360px, 100%);
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-input);
+  background: var(--color-raised);
+  box-shadow: var(--shadow-pop);
+  list-style: none;
+  z-index: 10;
+}
+
+.mentionOption {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  width: 100%;
+  height: 36px;
+  padding: 0 var(--space-8);
+  border: 0;
+  border-radius: var(--radius-chip);
+  background: transparent;
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+  @include type(body-read);
+
+  &[aria-selected="true"] {
+    background: var(--color-surface-hover);
+  }
+
+  svg {
+    width: var(--size-icon);
+    height: var(--size-icon);
+    margin: 0 2px;
+    color: var(--color-text-muted);
+  }
+}
+
+.mentionLabel {
+  font-weight: 500;
+}
+
+.mentionHint {
+  flex: 1;
+  color: var(--color-text-muted);
+  text-align: right;
+  @include type(caption);
+  @include truncate;
+}

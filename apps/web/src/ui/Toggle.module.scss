@@ -6,6 +6,27 @@
   gap: var(--space-8);
 }
 
+.rowTop {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-8);
+
+  .switch {
+    margin-top: var(--space-2);
+  }
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.hint {
+  color: var(--color-text-muted);
+  @include type(caption);
+}
+
 .label {
   color: var(--color-text);
   @include type(body-read);

@@ -34,6 +34,7 @@ type Store = {
   send: (conversationId: string, userId: string, text: string) => Promise<void>;
   retry: (conversationId: string, clientMsgId: string) => Promise<void>;
   discard: (conversationId: string, clientMsgId: string) => void;
+  forget: (conversationId: string) => void;
   reset: () => void;
 };
 
@@ -98,6 +99,7 @@ export const useMessages = create<Store>((set, get) => {
         clientMsgId,
         subtype: null,
         text,
+        mentions: [],
         createdAt: new Date().toISOString(),
         editedAt: null,
         local: "sending",
@@ -119,6 +121,12 @@ export const useMessages = create<Store>((set, get) => {
     discard(conversationId, clientMsgId) {
       patch(conversationId, (f) => ({ ...f, items: f.items.filter((m) => !(m.local && m.clientMsgId === clientMsgId)) }));
     },
+
+    forget: (id) =>
+      set((s) => {
+        const { [id]: _drop, ...rest } = s.feeds;
+        return { feeds: rest };
+      }),
 
     reset: () => set({ feeds: {} }),
   };

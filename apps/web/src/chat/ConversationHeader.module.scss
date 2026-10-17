@@ -29,6 +29,13 @@
     height: 18px;
     color: var(--color-text-muted);
   }
+
+  // Аватар в ЛС: зазора для «#» ему мало, отодвигаем от имени.
+  > span,
+  .titleButton > span {
+    margin-right: var(--space-4);
+    --presence-ring: var(--color-bg);
+  }
 }
 
 .topic {
@@ -58,6 +65,24 @@
   color: var(--color-text-secondary);
   cursor: pointer;
   @include type(body);
+
+  &:hover {
+    background: var(--color-surface-hover);
+  }
+}
+
+.titleButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  margin-left: calc(var(--space-4) * -1);
+  border: 0;
+  border-radius: var(--radius-chip);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
 
   &:hover {
     background: var(--color-surface-hover);

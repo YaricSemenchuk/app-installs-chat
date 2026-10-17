@@ -1,19 +1,38 @@
-import type { ReactElement, ReactNode } from "react";
+import { useRef, type ReactElement, type ReactNode } from "react";
 import { DropdownMenu as D } from "radix-ui";
 import { cx } from "../lib/cx";
 import { Kbd } from "./Kbd";
 import s from "./Menu.module.scss";
 
 export type MenuEntry =
-  | { kind: "item"; label: string; icon?: ReactNode; kbd?: string; danger?: boolean; disabled?: boolean; onSelect?: () => void }
+  | {
+      kind: "item";
+      label: string;
+      icon?: ReactNode;
+      kbd?: string;
+      danger?: boolean;
+      disabled?: boolean;
+      // Пункт открывает модалку: меню не возвращает фокус на свою кнопку, иначе оно отберёт его у модалки.
+      opensDialog?: boolean;
+      onSelect?: () => void;
+    }
   | { kind: "separator" };
 
 export function Menu({ trigger, items, align = "end" }: { trigger: ReactElement; items: MenuEntry[]; align?: "start" | "end" }) {
+  const keepFocus = useRef(false);
   return (
     <D.Root>
       <D.Trigger asChild>{trigger}</D.Trigger>
       <D.Portal>
-        <D.Content className={s.surface} sideOffset={4} align={align}>
+        <D.Content
+          className={s.surface}
+          sideOffset={4}
+          align={align}
+          onCloseAutoFocus={(e) => {
+            if (keepFocus.current) e.preventDefault();
+            keepFocus.current = false;
+          }}
+        >
           {items.map((it, i) =>
             it.kind === "separator" ? (
               <D.Separator key={i} className={s.separator} />
@@ -22,7 +41,10 @@ export function Menu({ trigger, items, align = "end" }: { trigger: ReactElement;
                 key={i}
                 className={cx(s.item, it.danger && s.danger)}
                 disabled={it.disabled}
-                onSelect={it.onSelect}
+                onSelect={() => {
+                  keepFocus.current = Boolean(it.opensDialog);
+                  it.onSelect?.();
+                }}
               >
                 <ItemBody {...it} />
               </D.Item>

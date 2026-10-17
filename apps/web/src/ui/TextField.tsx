@@ -1,8 +1,9 @@
-import { useId, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from "react";
+import { useId, type InputHTMLAttributes, type ReactNode, type Ref, type TextareaHTMLAttributes } from "react";
 import { cx } from "../lib/cx";
 import s from "./TextField.module.scss";
 
 type Props = Omit<InputHTMLAttributes<HTMLInputElement>, "size" | "prefix"> & {
+  ref?: Ref<HTMLInputElement>; // React 19: ref — обычный проп, уходит в <input> вместе с rest
   label: string;
   hideLabel?: boolean;
   hint?: ReactNode;
@@ -42,6 +43,8 @@ export function TextField({
           className={s.input}
           aria-invalid={error ? true : undefined}
           aria-describedby={note ? noteId : undefined}
+          // Метка для Dialog: React не пишет autofocus в DOM, а модалке нужно знать, куда ставить фокус.
+          data-autofocus={rest.autoFocus ? "" : undefined}
           {...rest}
         />
       </div>
@@ -73,6 +76,7 @@ export function TextArea({ label, hint, error, className, id, rows = 3, ...rest 
           className={cx(s.input, s.areaInput)}
           aria-invalid={error ? true : undefined}
           aria-describedby={note ? noteId : undefined}
+          data-autofocus={rest.autoFocus ? "" : undefined}
           {...rest}
         />
       </div>

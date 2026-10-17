@@ -1,13 +1,13 @@
 // Лента разговора: подгрузка истории вверх с сохранением позиции, прилипание к низу,
 // разделители дней и «Новые». Виртуализация (react-virtuoso) — когда лента станет тяжёлой.
-import { Fragment, useEffect, useLayoutEffect, useRef } from "react";
-import { LogIn } from "lucide-react";
+import { Fragment, useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
+import { LogIn, LogOut, Pencil } from "lucide-react";
 import type { BootDto } from "@teamchat/shared";
 import { isOnline, userName } from "../data/boot";
 import { UserCard } from "../people/UserCard";
 import { useMessages, type ChatMessage } from "../data/messages";
 import { dayKey, dayLabel, formatFull, formatTime } from "../lib/format";
-import { linkify } from "../lib/linkify";
+import { renderMessageText } from "../lib/mentions";
 import { EmptyState, Skeleton } from "../ui/Feedback";
 import { Spinner } from "../ui/Spinner";
 import { DateDivider, Message, SystemMessage, UnreadDivider } from "./Message";
@@ -22,9 +22,11 @@ type Props = {
   boot: BootDto;
   unreadAfterSeq: number; // курсор на момент открытия: всё после него помечается «Новые»
   onAtBottomChange: (atBottom: boolean) => void;
+  intro: { icon: ReactNode; title: string; text: string };
+  onMessageUser?: (userId: string) => void;
 };
 
-export function MessageList({ conversationId, title, boot, unreadAfterSeq, onAtBottomChange }: Props) {
+export function MessageList({ conversationId, title, boot, unreadAfterSeq, onAtBottomChange, intro, onMessageUser }: Props) {
   const feed = useMessages((st) => st.feeds[conversationId]);
   const loadBefore = useMessages((st) => st.loadBefore);
   const retry = useMessages((st) => st.retry);
@@ -116,16 +118,23 @@ export function MessageList({ conversationId, title, boot, unreadAfterSeq, onAtB
         </div>
       )}
       {!feed.hasMoreBefore && (
-        <EmptyState icon={<LogIn />} title={`Это начало ${title}`} text="Здесь вся история разговора: дальше в прошлое ничего нет" />
+        <EmptyState icon={intro.icon} title={intro.title} text={intro.text} />
       )}
       {items.map((m, i) => {
         const prev = items[i - 1];
         const newDay = !prev || dayKey(prev.createdAt) !== dayKey(m.createdAt);
         return (
           <Fragment key={m.clientMsgId ?? m.id}>
-            {m === firstUnread && <UnreadMarker />}
             {newDay && <DateDivider label={dayLabel(m.createdAt)} />}
-            <Row message={m} prev={newDay || m === firstUnread ? undefined : prev} boot={boot} onRetry={retry} onDiscard={discard} />
+            {m === firstUnread && <UnreadMarker />}
+            <Row
+              message={m}
+              prev={newDay || m === firstUnread ? undefined : prev}
+              boot={boot}
+              onRetry={retry}
+              onDiscard={discard}
+              onMessageUser={onMessageUser}
+            />
           </Fragment>
         );
       })}
@@ -147,18 +156,20 @@ function Row({
   boot,
   onRetry,
   onDiscard,
+  onMessageUser,
 }: {
   message: ChatMessage;
   prev: ChatMessage | undefined;
   boot: BootDto;
   onRetry: (conversationId: string, clientMsgId: string) => void;
   onDiscard: (conversationId: string, clientMsgId: string) => void;
+  onMessageUser?: (userId: string) => void;
 }) {
   const author = userName(boot, m.userId);
   const user = boot.users.find((u) => u.id === m.userId);
-  if (m.subtype === "join") {
-    return <SystemMessage icon={<LogIn />}>{author} теперь в канале</SystemMessage>;
-  }
+  const system = systemLine(m, author);
+  if (system) return system;
+  const mentionsMe = m.mentions.includes(boot.me.id);
   const continuation =
     !!prev &&
     prev.subtype === null &&
@@ -170,17 +181,43 @@ function Row({
       id={m.id}
       author={author}
       authorId={m.userId}
-      authorCard={user ? <UserCard user={user} online={isOnline(boot, user.id)} /> : undefined}
+      authorCard={
+        user ? (
+          <UserCard
+            user={user}
+            online={isOnline(boot, user.id)}
+            onMessage={onMessageUser && !user.deactivated ? () => onMessageUser(user.id) : undefined}
+          />
+        ) : undefined
+      }
       time={formatTime(m.createdAt)}
       fullTime={formatFull(m.createdAt)}
       isoTime={m.createdAt}
       continuation={continuation}
-      state={m.local === "sending" ? "sending" : m.local === "failed" ? "failed" : "default"}
+      state={m.local === "sending" ? "sending" : m.local === "failed" ? "failed" : mentionsMe ? "mentionsMe" : "default"}
       edited={m.editedAt !== null}
       onRetry={m.clientMsgId ? () => onRetry(m.conversationId, m.clientMsgId!) : undefined}
       onDiscard={m.clientMsgId ? () => onDiscard(m.conversationId, m.clientMsgId!) : undefined}
     >
-      <p className={s.text}>{linkify(m.text)}</p>
+      <p className={s.text}>{renderMessageText(m.text, boot, mentionsMe)}</p>
     </Message>
   );
+}
+
+// Системные строки ленты: вход, выход, тема, описание, название.
+function systemLine(m: ChatMessage, author: string) {
+  switch (m.subtype) {
+    case "join":
+      return <SystemMessage icon={<LogIn />}>{author} теперь в канале</SystemMessage>;
+    case "leave":
+      return <SystemMessage icon={<LogOut />}>{author} вышел(а) из канала</SystemMessage>;
+    case "topic":
+      return <SystemMessage icon={<Pencil />}>{m.text ? `${author} сменил(а) тему: «${m.text}»` : `${author} убрал(а) тему`}</SystemMessage>;
+    case "purpose":
+      return <SystemMessage icon={<Pencil />}>{m.text ? `${author} обновил(а) описание: «${m.text}»` : `${author} убрал(а) описание`}</SystemMessage>;
+    case "rename":
+      return <SystemMessage icon={<Pencil />}>{`${author} переименовал(а) канал в #${m.text}`}</SystemMessage>;
+    default:
+      return null;
+  }
 }
